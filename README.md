@@ -1,13 +1,9 @@
-# 📦 Streamlit App Starter Kit 
-```
-⬆️ (Replace above with your app's name)
-```
-
-Description of the app ...
+# 📦 RFM Customer Segmentation App
+This is a machine learning application based on RFM Customer Segmentation.
 
 ## Demo App
 
-[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://app-starter-kit.streamlit.app/)
+[![Streamlit App](https://static.streamlit.io/badges/streamlit_badge_black_white.svg)](https://RFM_Customer_Segmentation_App.streamlit.app/)
 
 ## GitHub Codespaces
 
