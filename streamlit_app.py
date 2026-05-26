@@ -1,5 +1,5 @@
 import streamlit as st
 
-st.title('🎈 App Name')
+st.title('🎈 RFM Customer Segmentation App')
 
 st.write('Hello world!')
