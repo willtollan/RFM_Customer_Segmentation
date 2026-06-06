@@ -3,20 +3,47 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 
-st.title('🤖 Machine Learning App')
+# Configure layout to fit data tables comfortably
+st.set_page_config(page_title="Machine Learning App", layout="wide")
 
+st.title('🤖 Machine Learning App')
 st.info('This app builds a machine learning model!')
 
-# 1. Define a cached function to load the data
+# 1. Define separate cached functions to load each dataset type
 @st.cache_data
-def load_data(file_path):
-    # This heavy operation runs only once
-    return pd.read_excel(file_path)
+def load_raw_data(file_path):
+    # Reads a 1,000-row sample of the heavy Excel file to preserve RAM performance
+    return pd.read_excel(file_path, nrows=1000)
 
-with st.expander('Data'):
-    st.write('**Raw data**')
+@st.cache_data
+def load_preprocessed_data(file_path):
+    # Reads the full preprocessed CSV file exported from your notebook
+    return pd.read_csv(file_path)
+
+
+# 2. Main data display component
+with st.expander('Data Inspection Workspace', expanded=True):
     
-    # 2. Call the cached function instead of reading directly
-    df = load_data('online_retail_II.xlsx')
+    # --- Raw Data Section ---
+    st.subheader('Raw Data')
+    st.write('This is a preview (first 1000 rows) of the original transaction dataset from the source Excel file:')
     
-    st.write(df)
+    try:
+        df_raw = load_raw_data('data/online_retail_II.xlsx')
+        st.dataframe(df_raw)
+    except FileNotFoundError:
+        st.error("Could not find 'data/online_retail_II.xlsx'. Please check your repository file path.")
+
+    st.markdown("---") # Visual divider line
+
+    # --- Preprocessed Data Section ---
+    st.subheader('Preprocessed Data')
+    st.write('This is the fully aggregated, cleaned, and outlier-filtered RFM feature dataset:')
+    
+    try:
+        df_preprocessed = load_preprocessed_data('data/preprocessed_data.csv')
+        st.dataframe(df_preprocessed)
+        st.metric(label="Total Unique Customers Scored", value=len(df_preprocessed))
+    except FileNotFoundError:
+        st.error("Could not find 'data/preprocessed_data.csv'. Please check your repository file path.")
+
