@@ -48,7 +48,7 @@ with st.expander('Data Inspection Workspace', expanded=True):
     try:
         df_preprocessed = load_preprocessed_data('data/preprocessed_data.csv')
         st.dataframe(df_preprocessed)
-        st.metric(label="Total Unique Labelled Customers", value=len(df_preprocessed))
+        st.metric(label="Total Unique Customers", value=len(df_preprocessed))
     except FileNotFoundError:
         st.error("Could not find 'data/preprocessed_data.csv'. Please check your repository file path.")
 
@@ -62,5 +62,10 @@ with st.expander('Data Inspection Workspace', expanded=True):
         df_labeled = load_labeled_data('data/preprocessed_labelled_data.csv')
         st.dataframe(df_labeled)
         st.metric(label="Total Unique Labelled Customers", value=len(df_labeled))
+        
+        # --- Train/Test Split Note ---
+        st.info("💡 **Modeling Note:** Prior to training, an **80% training and 20% testing split** was performed on this dataset. The split utilised **random shuffling** to remove structural order bias and **stratification** to strictly preserve original class balances across subsets.")
+        
     except FileNotFoundError:
         st.error("Could not find 'data/preprocessed_labelled_data.csv'. Please check your repository file path.")
+
