@@ -48,6 +48,7 @@ with st.expander('Data Inspection Workspace', expanded=True):
     try:
         df_preprocessed = load_preprocessed_data('data/preprocessed_data.csv')
         st.dataframe(df_preprocessed)
+        st.metric(label="Total Unique Labelled Customers", value=len(df_labeled))
     except FileNotFoundError:
         st.error("Could not find 'data/preprocessed_data.csv'. Please check your repository file path.")
 
