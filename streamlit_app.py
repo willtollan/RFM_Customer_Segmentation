@@ -10,4 +10,4 @@ st.info('This is app builds a machine learning model!')
 with st.expander('Data'):
   st.write('**Raw data**')
   df = pd.read_excel('online_retail_II.xlsx')
-  df
+  st.dataframe(df.head())
