@@ -3,7 +3,7 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 
-# Configure layout to fit data tables comfortably
+# Configure layout to fit wide data tables comfortably
 st.set_page_config(page_title="Machine Learning App", layout="wide")
 
 st.title('🤖 Machine Learning App')
@@ -20,6 +20,11 @@ def load_preprocessed_data(file_path):
     # Reads the full preprocessed CSV file exported from your notebook
     return pd.read_csv(file_path)
 
+@st.cache_data
+def load_labeled_data(file_path):
+    # Reads the preprocessed dataset containing the target label index and label name
+    return pd.read_csv(file_path)
+
 
 # 2. Main data display component
 with st.expander('Data Inspection Workspace', expanded=True):
@@ -34,7 +39,7 @@ with st.expander('Data Inspection Workspace', expanded=True):
     except FileNotFoundError:
         st.error("Could not find 'data/online_retail_II.xlsx'. Please check your repository file path.")
 
-    st.markdown("---") # Visual divider line
+    st.markdown("---") 
 
     # --- Preprocessed Data Section ---
     st.subheader('Preprocessed Data')
@@ -43,7 +48,18 @@ with st.expander('Data Inspection Workspace', expanded=True):
     try:
         df_preprocessed = load_preprocessed_data('data/preprocessed_data.csv')
         st.dataframe(df_preprocessed)
-        st.metric(label="Total Unique Customers Scored", value=len(df_preprocessed))
     except FileNotFoundError:
         st.error("Could not find 'data/preprocessed_data.csv'. Please check your repository file path.")
 
+    st.markdown("---")
+
+    # --- Preprocessed Data with Labels Section ---
+    st.subheader('Preprocessed Data with Labels')
+    st.write('This is the feature dataset including the target label index and label name for classification:')
+    
+    try:
+        df_labeled = load_labeled_data('data/preprocessed_labelled_data.csv')
+        st.dataframe(df_labeled)
+        st.metric(label="Total Unique Labelled Customers", value=len(df_labeled))
+    except FileNotFoundError:
+        st.error("Could not find 'data/preprocessed_labelled_data.csv'. Please check your repository file path.")
