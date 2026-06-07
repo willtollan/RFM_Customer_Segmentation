@@ -168,11 +168,14 @@ with st.expander('Random Forest Classifier', expanded=True):
     st.subheader('Key Metrics')
     st.write('Overall evaluation metrics for the tuned Random Forest classification model:')
     
-    try:
-        df_rf_metrics = load_rf_metrics('data/tuned_RF_key_metrics.csv')
-        st.dataframe(df_rf_metrics)
-    except FileNotFoundError:
-        st.error("Could not find 'data/tuned_RF_key_metrics.csv'. Please check your repository file path.")
+    # Contained the table inside a balanced column structure to narrow its field footprint
+    met_col1, met_col2, met_col3 = st.columns([1.5, 5, 1.5])
+    with met_col2:
+        try:
+            df_rf_metrics = load_rf_metrics('data/tuned_RF_key_metrics.csv')
+            st.dataframe(df_rf_metrics, use_container_width=True)
+        except FileNotFoundError:
+            st.error("Could not find 'data/tuned_RF_key_metrics.csv'. Please check your repository file path.")
         
     st.markdown("---")
     
@@ -180,11 +183,14 @@ with st.expander('Random Forest Classifier', expanded=True):
     st.subheader('Classification Report')
     st.write('Detailed performance metrics breakdown including precision, recall, and f1-score per cluster target:')
     
-    try:
-        df_rf_report = load_rf_report('data/tuned_RF_classification_report.csv')
-        st.dataframe(df_rf_report)
-    except FileNotFoundError:
-        st.error("Could not find 'data/tuned_RF_classification_report.csv'. Please check your repository file path.")
+    # Contained the table inside a balanced column structure to narrow its field footprint
+    rep_col1, rep_col2, rep_col3 = st.columns([1.5, 5, 1.5])
+    with rep_col2:
+        try:
+            df_rf_report = load_rf_report('data/tuned_RF_classification_report.csv')
+            st.dataframe(df_rf_report, use_container_width=True)
+        except FileNotFoundError:
+            st.error("Could not find 'data/tuned_RF_classification_report.csv'. Please check your repository file path.")
         
     st.markdown("---")
     
@@ -192,11 +198,10 @@ with st.expander('Random Forest Classifier', expanded=True):
     st.subheader('Confusion Matrix')
     st.write('Matrix visualising the actual versus predicted classification distributions on test data subsets:')
     
-    # Adjusted column ratio weighting to tighten the side padding constraints around the small graphic
-    cm_col1, cm_col2, cm_col3 = st.columns([2, 3, 2])
+    cm_col1, cm_col2, cm_col3 = st.columns([2, 4, 2])
     with cm_col2:
         try:
-            # Downscaled to 600px width for square matrix display tracking
             st.image('images/tuned_RF_confusion_matrix.png', width=600)
         except FileNotFoundError:
             st.error("Could not find 'images/tuned_RF_confusion_matrix.png'. Please check your repository folder path.")
+
