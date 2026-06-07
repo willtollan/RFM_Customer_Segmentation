@@ -263,8 +263,10 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
             'MonetaryValue': val_monetary
         }])
         
-        # Strip labeling parameters and map training columns order sequences
-        training_features = [col for col in df_labeled.columns if col not in ['Customer ID', 'label_index', 'label_name']]
+        # --- FIXED: HARDCODE FEATURE EXCLUSION BALANCING ---
+        # Instead of guessing from df_labeled, we force query_features to use these exact columns.
+        # IF your model was trained on different names (e.g., 'Monetary'), change these 3 strings below:
+        training_features = ['Recency', 'Frequency', 'MonetaryValue']
         query_features = query_features[training_features]
         
         # Run real-time machine learning inference
@@ -307,4 +309,5 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
             
     else:
         st.warning("Prediction engine offline. Check your file deployments inside your data and models folders.")
+
 
