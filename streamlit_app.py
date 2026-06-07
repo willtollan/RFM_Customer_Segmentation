@@ -90,12 +90,12 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=True):
     st.subheader('KMeans Clusters 3D Scatter Plot given Features: Recency, Frequency and Monetary Value')
     st.write('Visual spatial separation of your customer segments across the three RFM dimensions:')
     
-    # Create 3 columns (Left empty, Center for image, Right empty) to center and shrink the plot
-    col1, col2, col3 = st.columns([1, 2, 1])
+    # Using a 1:5:1 column weight ratio gives the middle image column significantly more width
+    col1, col2, col3 = st.columns([1, 5, 1])
     with col2:
         try:
-            # Removed use_container_width and specified a clean, locked width profile
-            st.image('images/KMeans_clusters.png', width=600)
+            # Increased width from 600 to 800 pixels for better scannability
+            st.image('images/KMeans_clusters.png', width=800)
         except FileNotFoundError:
             st.error("Could not find 'images/KMeans_clusters.png'. Please check your repository folder path.")
         
@@ -105,13 +105,14 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=True):
     st.subheader('Cluster Violin Plots by Feature')
     st.write('Distribution spread and density of Recency, Frequency, and Monetary Value across each cluster:')
     
-    # Reusing columns to bound the maximum display boundary of the violin plots
-    v_col1, v_col2, v_col3 = st.columns([1, 2, 1])
+    # Reusing the same wide column distribution matrix layout
+    v_col1, v_col2, v_col3 = st.columns([1, 5, 1])
     with v_col2:
         try:
-            st.image('images/cluster_violinplot_by_features.png', width=600)
+            st.image('images/cluster_violinplot_by_features.png', width=800)
         except FileNotFoundError:
             st.error("Could not find 'images/cluster_violinplot_by_features.png'. Please check your repository folder path.")
+
 
 
 
