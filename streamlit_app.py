@@ -247,7 +247,7 @@ with st.sidebar:
   input_df = pd.DataFrame(data, index=[0])
 
 with st.expander('Input features'):
-  st.write('**Input penguin**')
+  st.write('**Input Features**')
   input_df
 
 
