@@ -281,7 +281,7 @@ with st.sidebar:
   input_df = pd.DataFrame(data, index=[0])
 
 # ----------------------------------------------------
-# 6. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE
+# 5. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE
 # ----------------------------------------------------
 
 with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True):
@@ -290,8 +290,15 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     
     try:
         # 1. LOAD PRE-TRAINED MODEL (Fast and preserves your tuning parameters)
-        # Using the cached function declared at the top of your main script
-        active_model = load_serialized_model('models/random_forest_model.pkl')
+        import joblib
+        model_path = 'models/random_forest_model.pkl'
+        
+        # Self-contained cached function to prevent NameError scoping issues
+        @st.cache_resource
+        def inline_load_serialized_model(path):
+            return joblib.load(path)
+            
+        active_model = inline_load_model(model_path) if 'inline_load_model' in locals() else inline_load_serialized_model(model_path)
         
         # Enforce column sequence structure to match your exact X_train notebook layout
         training_features = ['MonetaryValue', 'Frequency', 'Recency']
@@ -333,10 +340,11 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         # --- Display Hard Prediction Outcome Banner ---
         st.subheader('Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
-        st.success(f"🎯 Assigned Group: **{cluster_names[prediction][0]}**")
+        st.success(f"🎯 Assigned Group: **{cluster_names[prediction]}**")
             
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
         st.info("💡 Pro-Tip: If you get a 'version mismatch' or serialization error, open your Jupyter notebook, run `import sklearn; print(sklearn.__version__)`, and match that exact version inside your GitHub `requirements.txt` file.")
+
 
