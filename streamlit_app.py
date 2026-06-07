@@ -293,7 +293,6 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         import joblib
         model_path = 'models/random_forest_model.pkl'
         
-        # Self-contained cached function to prevent NameError scoping issues
         @st.cache_resource
         def inline_load_serialized_model(path):
             return joblib.load(path)
@@ -308,8 +307,24 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         prediction = active_model.predict(query_features)
         prediction_proba = active_model.predict_proba(query_features)
         
-        # --- SCALE FRACTIONS TO PERCENTAGES (0.30 -> 30.0) ---
-        df_prediction_proba = pd.DataFrame(prediction_proba * 100.0)
+        # --- SAFE ARRAY UNIFYING & NORMALIZATION ENGINE ---
+        # This forces the scikit-learn output into a clean, flat 1D array of numbers
+        if isinstance(prediction_proba, list):
+            # If multi-output list structure, extract the positive presence probability for each cluster
+            raw_scores = np.array([float(cluster_out[0][1]) for cluster_out in prediction_proba])
+        else:
+            # Standard single-target multi-class array
+            raw_scores = np.asarray(prediction_proba).flatten()
+            
+        # Mathematical Softmax Normalization: Forces the 4 numbers to sum to exactly 1.0 (100%)
+        total_score_sum = float(np.sum(raw_scores))
+        if total_score_sum > 0:
+            normalized_percentages = (raw_scores / total_score_sum) * 100.0
+        else:
+            normalized_percentages = np.array([25.0, 25.0, 25.0, 25.0]) # Uniform fallback
+            
+        # Build DataFrame directly using the forced 100.00% maximum probability vector
+        df_prediction_proba = pd.DataFrame([normalized_percentages])
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
         st.markdown("---")
@@ -319,7 +334,6 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         st.dataframe(
             df_prediction_proba,
             column_config={
-                # FIXED: Applied '%.2f%%' string notation and raised max_value to 100.0
                 'Retain': st.column_config.ProgressColumn(
                     'Retain (Cluster 0)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0
                 ),
@@ -340,11 +354,15 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         # --- Display Hard Prediction Outcome Banner ---
         st.subheader('Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
-        st.success(f"🎯 Assigned Group: **{cluster_names[prediction]}**")
+        
+        # Safely capture the correct point classification assignment index matching the highest percentage
+        final_hard_index = int(np.argmax(normalized_percentages))
+        st.success(f"🎯 Assigned Group: **{cluster_names[final_hard_index]}**")
             
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
+
 
 
 
