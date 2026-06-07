@@ -81,7 +81,7 @@ with st.expander('Data Inspection Workspace', expanded=False):
 
 
 # 3. KMeans Clustering Results and Visualisations Component
-with st.expander('KMeans Clustering Results and Visualisations', expanded=False): # Set to False to focus on the classifier evaluation
+with st.expander('KMeans Clustering Results and Visualisations', expanded=False):
     
     # --- Color-Coded Legend Section ---
     st.subheader('Cluster Reference Legend')
@@ -161,7 +161,7 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
             st.error("Could not find 'images/cluster_violinplot_by_features.png'. Please check your repository folder path.")
 
 
-# 4. New Component: Random Forest Classifier Performance Metrics
+# 4. Random Forest Classifier Performance Metrics Component
 with st.expander('Random Forest Classifier', expanded=True):
     
     # --- Key Metrics Section ---
@@ -192,20 +192,11 @@ with st.expander('Random Forest Classifier', expanded=True):
     st.subheader('Confusion Matrix')
     st.write('Matrix visualising the actual versus predicted classification distributions on test data subsets:')
     
-    # Centering the matrix using your 800px image display column template
-    cm_col1, cm_col2, cm_col3 = st.columns([1.5, 5, 1.5])
+    # Adjusted column ratio weighting to tighten the side padding constraints around the small graphic
+    cm_col1, cm_col2, cm_col3 = st.columns([2, 3, 2])
     with cm_col2:
         try:
-            st.image('images/tuned_RF_confusion_matrix.png', width=800)
+            # Downscaled to 600px width for square matrix display tracking
+            st.image('images/tuned_RF_confusion_matrix.png', width=600)
         except FileNotFoundError:
             st.error("Could not find 'images/tuned_RF_confusion_matrix.png'. Please check your repository folder path.")
-
-
-
-
-
-
-
-
-
-
