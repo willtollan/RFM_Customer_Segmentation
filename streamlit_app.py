@@ -3,6 +3,10 @@ import numpy as np
 import pandas as pd
 from sklearn.ensemble import RandomForestClassifier
 
+# ----------------------------------------------------
+# 1. CACHED DATA & ARTIFACT LOADING FUNCTIONS
+# ----------------------------------------------------
+
 # Configure layout to fit wide data tables comfortably
 st.set_page_config(page_title="Machine Learning App", layout="wide")
 
@@ -34,7 +38,10 @@ def load_rf_metrics(file_path):
 @st.cache_data
 def load_rf_report(file_path):
     return pd.read_csv(file_path)
-
+    
+# ----------------------------------------------------
+# 2. DATA INSPECTION WORKSPACE COMPONENT
+# ----------------------------------------------------
 
 # 2. Data Inspection Workspace Component
 with st.expander('Data Inspection Workspace', expanded=False):
@@ -79,6 +86,9 @@ with st.expander('Data Inspection Workspace', expanded=False):
     except FileNotFoundError:
         st.error("Could not find 'data/preprocessed_labelled_data.csv'. Please check your repository file path.")
 
+# ----------------------------------------------------
+# 3. KMEANS CLUSTERING RESULTS AND VISUALISATIONS
+# ----------------------------------------------------
 
 # 3. KMeans Clustering Results and Visualisations Component
 with st.expander('KMeans Clustering Results and Visualisations', expanded=False):
@@ -160,6 +170,9 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
         except FileNotFoundError:
             st.error("Could not find 'images/cluster_violinplot_by_features.png'. Please check your repository folder path.")
 
+# ----------------------------------------------------
+# 4. RANDOM FOREST CLASSIFIER PERFORMANCE METRICS
+# ----------------------------------------------------
 
 # 4. Random Forest Classifier Performance Metrics Component
 with st.expander('Random Forest Classifier', expanded=True):
@@ -215,3 +228,9 @@ with st.expander('Random Forest Classifier', expanded=True):
             st.image('images/tuned_RF_confusion_matrix.png', width=600)
         except FileNotFoundError:
             st.error("Could not find 'images/tuned_RF_confusion_matrix.png'. Please check your repository folder path.")
+
+# ----------------------------------------------------
+# 5. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE
+# ----------------------------------------------------
+
+
