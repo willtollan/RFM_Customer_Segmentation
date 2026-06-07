@@ -236,9 +236,22 @@ with st.expander('Random Forest Classifier', expanded=True):
 # Input features
 with st.sidebar:
   st.header('Input features')
-  MonetaryValue = st.slider('MonetaryValue', 5, 4000, 1634)
-  Frequency = st.slider('Frequency', 1, 12, 1)
-  Recency = st.slider('Recency', 0, 375, 113)
+  
+  # 1. MonetaryValue sync (Float/Int mix handled by Streamlit based on defaults)
+  st.number_input('MonetaryValue Input', 5, 4000, 1634, key='mv_input')
+  MonetaryValue = st.slider('MonetaryValue', 5, 4000, key='mv_input')
+  
+  st.markdown("---") # Visual separator between features
+  
+  # 2. Frequency sync
+  st.number_input('Frequency Input', 1, 12, 1, key='freq_input')
+  Frequency = st.slider('Frequency', 1, 12, key='freq_input')
+  
+  st.markdown("---")
+  
+  # 3. Recency sync
+  st.number_input('Recency Input', 0, 375, 113, key='rec_input')
+  Recency = st.slider('Recency', 0, 375, key='rec_input')
   
   # Create a DataFrame for the input features
   data = {'MonetaryValue': MonetaryValue,
