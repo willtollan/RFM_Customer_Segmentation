@@ -231,7 +231,7 @@ with st.expander('Random Forest Classifier', expanded=True):
 
 
 # ----------------------------------------------------
-# 5. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE
+# 5. COLLECT USER INPUTS
 # ----------------------------------------------------
 
 # --- Sync Callbacks ---
@@ -281,11 +281,7 @@ with st.sidebar:
   input_df = pd.DataFrame(data, index=[0])
 
 # ----------------------------------------------------
-# 5. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE
-# ----------------------------------------------------
-
-# ----------------------------------------------------
-# 5. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE
+# 6. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE
 # ----------------------------------------------------
 
 with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True):
@@ -293,30 +289,20 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     st.write('Adjust the features in the left sidebar to classify a customer profile in real time.')
     
     try:
-        # 1. LIVE MODEL TRAINING (Cached to prevent lag)
-        @st.cache_resource
-        def train_live_model(_data):
-            X_train_live = _data[['MonetaryValue', 'Frequency', 'Recency']]
-            y_train_live = _data['Cluster']  
-            
-            clf = RandomForestClassifier(n_estimators=100, random_state=42)
-            clf.fit(X_train_live, y_train_live)
-            return clf
-
-        # Run the training loop once using your uploaded labeled dataframe
-        with st.spinner('Training classification model live...'):
-            active_model = train_live_model(df_labeled)
+        # 1. LOAD PRE-TRAINED MODEL (Fast and preserves your tuning parameters)
+        # Using the cached function declared at the top of your main script
+        active_model = load_serialized_model('models/random_forest_model.pkl')
         
-        # Enforce column sequence structure to match your input configurations
+        # Enforce column sequence structure to match your exact X_train notebook layout
         training_features = ['MonetaryValue', 'Frequency', 'Recency']
         query_features = input_df[training_features]
         
-        # 2. RUN INFERENCE 
+        # 2. RUN INFERENCE USING PRE-TRAINED MODEL
         prediction = active_model.predict(query_features)
         prediction_proba = active_model.predict_proba(query_features)
         
-        # --- FIXED: Multiply by 100 to rescale true decimals into full percentages ---
-        df_prediction_proba = pd.DataFrame(prediction_proba * 100.0)
+        # Keep raw decimals intact so they remain within bounds [0.0, 1.0]
+        df_prediction_proba = pd.DataFrame(prediction_proba)
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
         st.markdown("---")
@@ -326,17 +312,18 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         st.dataframe(
             df_prediction_proba,
             column_config={
+                # 'percentage' natively formats a 0.30 decimal to 30.00% with a filled progress bar
                 'Retain': st.column_config.ProgressColumn(
-                    'Retain (Cluster 0)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0
+                    'Retain (Cluster 0)', format='percentage', width='medium', min_value=0.0, max_value=1.0
                 ),
                 'Reward': st.column_config.ProgressColumn(
-                    'Reward (Cluster 1)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0
+                    'Reward (Cluster 1)', format='percentage', width='medium', min_value=0.0, max_value=1.0
                 ),
                 'Nurture': st.column_config.ProgressColumn(
-                    'Nurture (Cluster 2)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0
+                    'Nurture (Cluster 2)', format='percentage', width='medium', min_value=0.0, max_value=1.0
                 ),
                 'Re-Engage': st.column_config.ProgressColumn(
-                    'Re-Engage (Cluster 3)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0
+                    'Re-Engage (Cluster 3)', format='percentage', width='medium', min_value=0.0, max_value=1.0
                 ),
             }, 
             hide_index=True,
@@ -346,12 +333,10 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         # --- Display Hard Prediction Outcome Banner ---
         st.subheader('Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
-        st.success(f"🎯 Assigned Group: **{cluster_names[prediction]}**")
+        st.success(f"🎯 Assigned Group: **{cluster_names[prediction][0]}**")
             
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
-
-
-
+        st.info("💡 Pro-Tip: If you get a 'version mismatch' or serialization error, open your Jupyter notebook, run `import sklearn; print(sklearn.__version__)`, and match that exact version inside your GitHub `requirements.txt` file.")
 
