@@ -251,6 +251,10 @@ with st.sidebar:
 # 5. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE
 # ----------------------------------------------------
 
+# ----------------------------------------------------
+# 5. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE
+# ----------------------------------------------------
+
 # Main display expander block on the dashboard
 with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True):
     st.subheader('Live Inference Panel')
@@ -297,25 +301,31 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         st.markdown("### **Soft Prediction Probabilities:**")
         prob_col1, prob_col2, prob_col3, prob_col4 = st.columns(4)
         
+        # FIXED: Checked if probabilities are on a 0-100 scale or 0-1 scale dynamically,
+        # then divided by 100 where necessary so st.progress gets a valid [0.0, 1.0] value.
         with prob_col1:
             val_p0 = float(final_soft_pred.item(0))
-            st.metric(label="🔵 Cluster 0 (Retain)", value=f"{val_p0:.1%}")
-            st.progress(val_p0)
+            display_p0 = val_p0 / 100.0 if val_p0 > 1.0 else val_p0
+            st.metric(label="🔵 Cluster 0 (Retain)", value=f"{display_p0:.1%}")
+            st.progress(display_p0)
             
         with prob_col2:
             val_p1 = float(final_soft_pred.item(1))
-            st.metric(label="🔴 Cluster 1 (Reward)", value=f"{val_p1:.1%}")
-            st.progress(val_p1)
+            display_p1 = val_p1 / 100.0 if val_p1 > 1.0 else val_p1
+            st.metric(label="🔴 Cluster 1 (Reward)", value=f"{display_p1:.1%}")
+            st.progress(display_p1)
             
         with prob_col3:
             val_p2 = float(final_soft_pred.item(2))
-            st.metric(label="🟢 Cluster 2 (Nurture)", value=f"{val_p2:.1%}")
-            st.progress(val_p2)
+            display_p2 = val_p2 / 100.0 if val_p2 > 1.0 else val_p2
+            st.metric(label="🟢 Cluster 2 (Nurture)", value=f"{display_p2:.1%}")
+            st.progress(display_p2)
             
         with prob_col4:
             val_p3 = float(final_soft_pred.item(3))
-            st.metric(label="🟠 Cluster 3 (Re-Engage)", value=f"{val_p3:.1%}")
-            st.progress(val_p3)
+            display_p3 = val_p3 / 100.0 if val_p3 > 1.0 else val_p3
+            st.metric(label="🟠 Cluster 3 (Re-Engage)", value=f"{display_p3:.1%}")
+            st.progress(display_p3)
             
     except ModuleNotFoundError as e:
         st.error(f"❌ **Missing Dependency:** {str(e)}. Please add `joblib` or `scikit-learn` to your `requirements.txt` file.")
@@ -323,5 +333,6 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         st.error("❌ **Prediction Engine Loading Failure Details:**")
         st.warning(f"System Message: {str(e)}")
         st.info("💡 Hint: If the error says 'No such file', double-check that your model file on GitHub is named exactly `random_forest_model.pkl` in lowercase letters inside a folder named `models`.")
+
 
 
