@@ -308,9 +308,10 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         prediction_proba = active_model.predict_proba(query_features)
         
         # --- SAFE ARRAY UNIFYING & NORMALIZATION ENGINE ---
-        # This forces the scikit-learn output into a clean, flat 1D array of numbers
+        # Checks if your model outputs as a list of arrays (Multi-Output structure)
         if isinstance(prediction_proba, list):
-            # If multi-output list structure, extract the positive presence probability for each cluster
+            # FIXED: Explicitly extract the positive class probability (index 1) for each cluster list element
+            # This extracts the exact presence percentage matrix matching your notebook's prediction arrays
             raw_scores = np.array([float(cluster_out[0][1]) for cluster_out in prediction_proba])
         else:
             # Standard single-target multi-class array
@@ -362,7 +363,5 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
-
-
 
 
