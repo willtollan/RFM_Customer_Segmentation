@@ -294,14 +294,11 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     
     try:
         # 1. LIVE MODEL TRAINING (Cached to prevent lag)
-        # Replicates your exact notebook training data setup using your loaded dataframe
         @st.cache_resource
         def train_live_model(_data):
-            # Extract features and targets matching your exact notebook column names
             X_train_live = _data[['MonetaryValue', 'Frequency', 'Recency']]
-            y_train_live = _data['Cluster']  # Verified column name from your notebook
+            y_train_live = _data['Cluster']  
             
-            # Train the identical standard Multi-Class Classifier
             clf = RandomForestClassifier(n_estimators=100, random_state=42)
             clf.fit(X_train_live, y_train_live)
             return clf
@@ -314,12 +311,12 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         training_features = ['MonetaryValue', 'Frequency', 'Recency']
         query_features = input_df[training_features]
         
-        # 2. RUN INFERENCE (Exactly like the Penguins example)
+        # 2. RUN INFERENCE 
         prediction = active_model.predict(query_features)
         prediction_proba = active_model.predict_proba(query_features)
         
-        # Build DataFrame directly from prediction matrix arrays
-        df_prediction_proba = pd.DataFrame(prediction_proba)
+        # --- FIXED: Multiply by 100 to rescale true decimals into full percentages ---
+        df_prediction_proba = pd.DataFrame(prediction_proba * 100.0)
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
         st.markdown("---")
@@ -330,16 +327,16 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
             df_prediction_proba,
             column_config={
                 'Retain': st.column_config.ProgressColumn(
-                    'Retain (Cluster 0)', format='%.1f%%', width='medium', min_value=0.0, max_value=1.0
+                    'Retain (Cluster 0)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0
                 ),
                 'Reward': st.column_config.ProgressColumn(
-                    'Reward (Cluster 1)', format='%.1f%%', width='medium', min_value=0.0, max_value=1.0
+                    'Reward (Cluster 1)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0
                 ),
                 'Nurture': st.column_config.ProgressColumn(
-                    'Nurture (Cluster 2)', format='%.1f%%', width='medium', min_value=0.0, max_value=1.0
+                    'Nurture (Cluster 2)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0
                 ),
                 'Re-Engage': st.column_config.ProgressColumn(
-                    'Re-Engage (Cluster 3)', format='%.1f%%', width='medium', min_value=0.0, max_value=1.0
+                    'Re-Engage (Cluster 3)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0
                 ),
             }, 
             hide_index=True,
@@ -349,12 +346,12 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         # --- Display Hard Prediction Outcome Banner ---
         st.subheader('Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
-        st.success(f"🎯 Assigned Group: **{cluster_names[prediction][0]}**")
+        st.success(f"🎯 Assigned Group: **{cluster_names[prediction]}**")
             
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
-        st.info("💡 Hint: Ensure your uploaded 'data/preprocessed_labelled_data.csv' file contains the column names 'MonetaryValue', 'Frequency', 'Recency', and 'Cluster'.")
+
 
 
 
