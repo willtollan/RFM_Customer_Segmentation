@@ -119,11 +119,11 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=True):
     st.subheader('Elbow Method: Optimal Number of Clusters (K)')
     st.write('Evaluation of Within-Cluster Sum of Squares (WCSS) to determine the mathematically optimal cluster configuration:')
     
-    # Using specific array ratios [0.5, 9, 0.5] allocates 90% of layout width to the center image column
+    # Kept large layout structure [0.5, 9, 0.5] for the primary metric
     elbow_col1, elbow_col2, elbow_col3 = st.columns([0.5, 9, 0.5])
     with elbow_col2:
         try:
-            # Scaled up image layout size ceiling profile to 1100 pixels
+            # Preserved at 1100px width profile per your preference
             st.image('images/optimal_K_elbow_method.png', width=1100)
         except FileNotFoundError:
             st.error("Could not find 'images/optimal_K_elbow_method.png'. Please check your repository folder path.")
@@ -134,10 +134,12 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=True):
     st.subheader('KMeans Clusters 3D Scatter Plot given Features: Recency, Frequency and Monetary Value')
     st.write('Visual spatial separation of your customer segments across the three RFM dimensions:')
     
-    col1, col2, col3 = st.columns([0.5, 9, 0.5])
+    # Modified column ratio to center narrower 800px elements nicely
+    col1, col2, col3 = st.columns([1.5, 5, 1.5])
     with col2:
         try:
-            st.image('images/KMeans_clusters.png', width=1100)
+            # Downscaled to 800px
+            st.image('images/KMeans_clusters.png', width=800)
         except FileNotFoundError:
             st.error("Could not find 'images/KMeans_clusters.png'. Please check your repository folder path.")
         
@@ -147,12 +149,15 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=True):
     st.subheader('Cluster Violin Plots by Feature')
     st.write('Distribution spread and density of Recency, Frequency, and Monetary Value across each cluster:')
     
-    v_col1, v_col2, v_col3 = st.columns([0.5, 9, 0.5])
+    # Modified column ratio to center narrower 800px elements nicely
+    v_col1, v_col2, v_col3 = st.columns([1.5, 5, 1.5])
     with v_col2:
         try:
-            st.image('images/cluster_violinplot_by_features.png', width=1100)
+            # Downscaled to 800px
+            st.image('images/cluster_violinplot_by_features.png', width=800)
         except FileNotFoundError:
             st.error("Could not find 'images/cluster_violinplot_by_features.png'. Please check your repository folder path.")
+
 
 
 
