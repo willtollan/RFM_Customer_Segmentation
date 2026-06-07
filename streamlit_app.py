@@ -244,4 +244,11 @@ with st.sidebar:
   data = {'MonetaryValue': MonetaryValue,
           'Frequency': Frequency,
           'Recency': Recency}
+  input_df = pd.DataFrame(data, index=[0])
+
+with st.expander('Input features'):
+  st.write('**Input penguin**')
+  input_df
+
+
     
