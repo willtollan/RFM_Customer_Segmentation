@@ -256,8 +256,18 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     st.subheader('Live Inference Panel')
     st.write('Adjust the features in the left sidebar to classify a customer profile in real time.')
     
-    # Direct Execution Loop with standalone error validation framework
     try:
+        # Load the model directly here to prevent root-level scoping failure blocks
+        import joblib
+        model_path = 'models/random_forest_model.pkl'
+        
+        # Load model using Streamlit's resource caching
+        @st.cache_resource
+        def inline_load_model(path):
+            return joblib.load(path)
+            
+        active_model = inline_load_model(model_path)
+        
         # Display the active input features dataframe passed from your sidebar controls
         st.write('**Active User Input Features Matrix (Passed to Model):**')
         st.dataframe(input_df)
@@ -267,8 +277,8 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         query_features = input_df[training_features]
         
         # --- Run Real-time Machine Learning Inference ---
-        raw_hard_pred = loaded_model.predict(query_features)
-        raw_soft_pred = loaded_model.predict_proba(query_features)
+        raw_hard_pred = active_model.predict(query_features)
+        raw_soft_pred = active_model.predict_proba(query_features)
         
         # Extract plain Python values to avoid markdown array syntax layout breaks
         final_hard_pred = int(raw_hard_pred.item())
@@ -276,7 +286,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         
         st.markdown("---")
         
-        # Map cluster indexes back to text labels
+        # Map cluster indexes to text labels
         cluster_mapping = {0: "Retain", 1: "Reward", 2: "Nurture", 3: "Re-Engage"}
         predicted_label = cluster_mapping.get(final_hard_pred, f"Cluster {final_hard_pred}")
         
@@ -307,8 +317,11 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
             st.metric(label="🟠 Cluster 3 (Re-Engage)", value=f"{val_p3:.1%}")
             st.progress(val_p3)
             
-    except NameError:
-        st.warning("⚠️ Prediction engine initialization waiting for pipeline data. Ensure 'loaded_model' compiles successfully at the top of your script workspace.")
+    except ModuleNotFoundError as e:
+        st.error(f"❌ **Missing Dependency:** {str(e)}. Please add `joblib` or `scikit-learn` to your `requirements.txt` file.")
     except Exception as e:
-        st.error(f"❌ Runtime Processing Error: {str(e)}")
+        st.error("❌ **Prediction Engine Loading Failure Details:**")
+        st.warning(f"System Message: {str(e)}")
+        st.info("💡 Hint: If the error says 'No such file', double-check that your model file on GitHub is named exactly `random_forest_model.pkl` in lowercase letters inside a folder named `models`.")
+
 
