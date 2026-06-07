@@ -281,7 +281,7 @@ with st.sidebar:
   input_df = pd.DataFrame(data, index=[0])
 
 # ----------------------------------------------------
-# 5. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE
+# 6. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE
 # ----------------------------------------------------
 
 with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True):
@@ -308,10 +308,9 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         prediction_proba = active_model.predict_proba(query_features)
         
         # --- SAFE ARRAY UNIFYING & NORMALIZATION ENGINE ---
-        # Checks if your model outputs as a list of arrays (Multi-Output structure)
+        # This forces the scikit-learn output into a clean, flat 1D array of numbers
         if isinstance(prediction_proba, list):
-            # FIXED: Explicitly extract the positive class probability (index 1) for each cluster list element
-            # This extracts the exact presence percentage matrix matching your notebook's prediction arrays
+            # If multi-output list structure, extract the positive presence probability for each cluster
             raw_scores = np.array([float(cluster_out[0][1]) for cluster_out in prediction_proba])
         else:
             # Standard single-target multi-class array
