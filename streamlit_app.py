@@ -280,6 +280,71 @@ with st.sidebar:
           'Recency': Recency}
   input_df = pd.DataFrame(data, index=[0])
 
+# ----------------------------------------------------
+# 5. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE
+# ----------------------------------------------------
+
+with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True):
+    st.subheader('Live Inference Panel')
+    st.write('Adjust the features in the left sidebar to classify a customer profile in real time.')
+    
+    try:
+        # Load your model from the models folder
+        import joblib
+        model_path = 'models/random_forest_model.pkl'
+        
+        @st.cache_resource
+        def inline_load_model(path):
+            return joblib.load(path)
+            
+        active_model = inline_load_model(model_path)
+        
+        # Ensure the feature names match the sequence structure seen during training
+        training_features = ['MonetaryValue', 'Frequency', 'Recency']
+        query_features = input_df[training_features]
+        
+        # --- Run Clean Example Predictions ---
+        prediction = active_model.predict(query_features)
+        prediction_proba = active_model.predict_proba(query_features)
+        
+        # Build DataFrame directly from prediction matrix arrays
+        df_prediction_proba = pd.DataFrame(prediction_proba)
+        df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
+        
+        st.markdown("---")
+        
+        # --- Display Soft Prediction Probabilities Table ---
+        st.subheader('Predicted Cluster Probabilities')
+        st.dataframe(
+            df_prediction_proba,
+            column_config={
+                'Retain': st.column_config.ProgressColumn(
+                    'Retain (Cluster 0)', format='%.1f%%', width='medium', min_value=0.0, max_value=1.0
+                ),
+                'Reward': st.column_config.ProgressColumn(
+                    'Reward (Cluster 1)', format='%.1f%%', width='medium', min_value=0.0, max_value=1.0
+                ),
+                'Nurture': st.column_config.ProgressColumn(
+                    'Nurture (Cluster 2)', format='%.1f%%', width='medium', min_value=0.0, max_value=1.0
+                ),
+                'Re-Engage': st.column_config.ProgressColumn(
+                    'Re-Engage (Cluster 3)', format='%.1f%%', width='medium', min_value=0.0, max_value=1.0
+                ),
+            }, 
+            hide_index=True,
+            use_container_width=True
+        )
+        
+        # --- Display Hard Prediction Outcome Banner ---
+        st.subheader('Predicted Customer Segment')
+        cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
+        st.success(f"🎯 Assigned Group: **{cluster_names[prediction][0]}**")
+            
+    except Exception as e:
+        st.error("❌ **Prediction Engine Workspace Exception:**")
+        st.warning(f"System Message: {str(e)}")
+
+
 
 
 
