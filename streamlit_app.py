@@ -12,7 +12,8 @@ st.info('This app builds a machine learning model!')
 # 1. Define separate cached functions to load each dataset type
 @st.cache_data
 def load_raw_data(file_path):
-    return pd.read_excel(file_path, nrows=1000)
+    # Force 'Invoice' and 'StockCode' columns to strings to prevent PyArrow rendering crashes
+    return pd.read_excel(file_path, nrows=1000, dtype={'Invoice': str, 'StockCode': str})
 
 @st.cache_data
 def load_preprocessed_data(file_path):
@@ -114,11 +115,12 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=True):
         
     st.markdown("---")
 
-    # --- New Elbow Method Section ---
+    # --- Elbow Method Section ---
     st.subheader('Elbow Method: Optimal Number of Clusters (K)')
     st.write('Evaluation of Within-Cluster Sum of Squares (WCSS) to determine the mathematically optimal cluster configuration:')
     
-    elbow_col1, elbow_col2, elbow_col3 = st.columns()
+    # FIXED: Added explicit integer count (3) to layout mapping matrices
+    elbow_col1, elbow_col2, elbow_col3 = st.columns(3)
     with elbow_col2:
         try:
             st.image('images/optimal_K_elbow_method.png', width=800)
@@ -131,7 +133,8 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=True):
     st.subheader('KMeans Clusters 3D Scatter Plot given Features: Recency, Frequency and Monetary Value')
     st.write('Visual spatial separation of your customer segments across the three RFM dimensions:')
     
-    col1, col2, col3 = st.columns()
+    # FIXED: Added explicit integer count (3) to column declaration
+    col1, col2, col3 = st.columns(3)
     with col2:
         try:
             st.image('images/KMeans_clusters.png', width=800)
@@ -144,12 +147,14 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=True):
     st.subheader('Cluster Violin Plots by Feature')
     st.write('Distribution spread and density of Recency, Frequency, and Monetary Value across each cluster:')
     
-    v_col1, v_col2, v_col3 = st.columns()
+    # FIXED: Added explicit integer count (3) to column declaration
+    v_col1, v_col2, v_col3 = st.columns(3)
     with v_col2:
         try:
             st.image('images/cluster_violinplot_by_features.png', width=800)
         except FileNotFoundError:
             st.error("Could not find 'images/cluster_violinplot_by_features.png'. Please check your repository folder path.")
+
 
 
 
