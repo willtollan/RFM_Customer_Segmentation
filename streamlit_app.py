@@ -229,35 +229,57 @@ with st.expander('Random Forest Classifier', expanded=True):
         except FileNotFoundError:
             st.error("Could not find 'images/tuned_RF_confusion_matrix.png'. Please check your repository folder path.")
 
+
 # ----------------------------------------------------
 # 5. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE
 # ----------------------------------------------------
+
+# --- Sync Callbacks ---
+def sync_mv_slider():
+    st.session_state.mv_num = st.session_state.mv_slide
+
+def sync_mv_num():
+    st.session_state.mv_slide = st.session_state.mv_num
+
+def sync_freq_slider():
+    st.session_state.freq_num = st.session_state.freq_slide
+
+def sync_freq_num():
+    st.session_state.freq_slide = st.session_state.freq_num
+
+def sync_rec_slider():
+    st.session_state.rec_num = st.session_state.rec_slide
+
+def sync_rec_num():
+    st.session_state.rec_slide = st.session_state.rec_num
+
 
 # Input features
 with st.sidebar:
   st.header('Input features')
   
-  # 1. MonetaryValue sync (Float/Int mix handled by Streamlit based on defaults)
-  st.number_input('MonetaryValue Input', 5, 4000, 1634, key='mv_input')
-  MonetaryValue = st.slider('MonetaryValue', 5, 4000, key='mv_input')
-  
-  st.markdown("---") # Visual separator between features
-  
-  # 2. Frequency sync
-  st.number_input('Frequency Input', 1, 12, 1, key='freq_input')
-  Frequency = st.slider('Frequency', 1, 12, key='freq_input')
+  # 1. MonetaryValue Sync Block
+  st.number_input('MonetaryValue Input', 5, 4000, 1634, key='mv_num', on_change=sync_mv_num)
+  MonetaryValue = st.slider('MonetaryValue', 5, 4000, key='mv_slide', on_change=sync_mv_slider)
   
   st.markdown("---")
   
-  # 3. Recency sync
-  st.number_input('Recency Input', 0, 375, 113, key='rec_input')
-  Recency = st.slider('Recency', 0, 375, key='rec_input')
+  # 2. Frequency Sync Block
+  st.number_input('Frequency Input', 1, 12, 1, key='freq_num', on_change=sync_freq_num)
+  Frequency = st.slider('Frequency', 1, 12, key='freq_slide', on_change=sync_freq_slider)
+  
+  st.markdown("---")
+  
+  # 3. Recency Sync Block
+  st.number_input('Recency Input', 0, 375, 113, key='rec_num', on_change=sync_rec_num)
+  Recency = st.slider('Recency', 0, 375, key='rec_slide', on_change=sync_rec_slider)
   
   # Create a DataFrame for the input features
   data = {'MonetaryValue': MonetaryValue,
           'Frequency': Frequency,
           'Recency': Recency}
   input_df = pd.DataFrame(data, index=[0])
+
 
 
 
