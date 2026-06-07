@@ -294,23 +294,23 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     
     try:
         # 1. LIVE MODEL TRAINING (Cached to prevent lag)
-        # We define a function inside Section 5 to train the model directly on your data
+        # Replicates your exact notebook training data setup using your loaded dataframe
         @st.cache_resource
         def train_live_model(_data):
-            # Isolate the exact unscaled features used in your notebook split
+            # Extract features and targets matching your exact notebook column names
             X_train_live = _data[['MonetaryValue', 'Frequency', 'Recency']]
-            y_train_live = _data['label_index']  # Uses your numeric cluster label index
+            y_train_live = _data['Cluster']  # Verified column name from your notebook
             
-            # Train the standard Multi-Class Classifier
+            # Train the identical standard Multi-Class Classifier
             clf = RandomForestClassifier(n_estimators=100, random_state=42)
             clf.fit(X_train_live, y_train_live)
             return clf
 
-        # Run the training function once using your already loaded labeled dataframe
+        # Run the training loop once using your uploaded labeled dataframe
         with st.spinner('Training classification model live...'):
             active_model = train_live_model(df_labeled)
         
-        # Ensure the feature names match the sequence structure seen during training
+        # Enforce column sequence structure to match your input configurations
         training_features = ['MonetaryValue', 'Frequency', 'Recency']
         query_features = input_df[training_features]
         
@@ -354,7 +354,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
-        st.info("💡 Hint: Ensure your uploaded 'data/preprocessed_labelled_data.csv' file contains the column names 'MonetaryValue', 'Frequency', 'Recency', and 'label_index'.")
+        st.info("💡 Hint: Ensure your uploaded 'data/preprocessed_labelled_data.csv' file contains the column names 'MonetaryValue', 'Frequency', 'Recency', and 'Cluster'.")
 
 
 
