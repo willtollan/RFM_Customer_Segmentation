@@ -280,10 +280,31 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         raw_hard_pred = active_model.predict(query_features)
         raw_soft_pred = active_model.predict_proba(query_features)
         
-        # FIXED: Explicitly extract the first prediction row as a clean 1D list of floats
-        # This strips away all multi-dimensional array wrappers and forces an exact sum to 1.0 (100%)
-        probabilities = [float(x) for x in raw_soft_pred[0]]
-        final_hard_pred = int(raw_hard_pred[0])
+        # --- HANDLE MULTI-OUTPUT OR SINGLE-OUTPUT MATRIX CONSTRAINTS DYNAMICALLY ---
+        # This checks if scikit-learn returned a list of arrays (Multi-Output structure)
+        if isinstance(raw_soft_pred, list):
+            # Extract the positive class probability (index 1 of the first sample row) for each target array
+            extracted_probs = []
+            for cluster_array in raw_soft_pred:
+                # cluster_array shape is (1, 2) -> [[prob_negative, prob_positive]]
+                prob_positive = float(cluster_array[0][1])
+                extracted_probs.append(prob_positive)
+            
+            # Safe Normalization step to guarantee the array values sum to exactly 1.0 (100%)
+            sum_probs = sum(extracted_probs)
+            if sum_probs > 0:
+                probabilities = [p / sum_probs for p in extracted_probs]
+            else:
+                probabilities = [0.25, 0.25, 0.25, 0.25] # Fallback uniform distribution
+        else:
+            # Standard single-target 4-class classification array matrix layout profile
+            probabilities = [float(x) for x in raw_soft_pred[0]]
+            
+        # Isolate final index targets safely
+        if isinstance(raw_hard_pred, np.ndarray) and raw_hard_pred.ndim > 1:
+            final_hard_pred = int(raw_hard_pred[0][0]) # Multi-output fallback array index choice
+        else:
+            final_hard_pred = int(raw_hard_pred.item())
         
         st.markdown("---")
         
@@ -298,7 +319,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         st.markdown("### **Soft Prediction Probabilities:**")
         prob_col1, prob_col2, prob_col3, prob_col4 = st.columns(4)
         
-        # Using explicit list indexing and defensive rounding boundaries for progress bars
+        # Pull values and deploy with defensive boundary clamps for st.progress tracking safety
         with prob_col1:
             val_p0 = min(max(probabilities[0], 0.0), 1.0)
             st.metric(label="🔵 Cluster 0 (Retain)", value=f"{val_p0:.1%}")
@@ -324,6 +345,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     except Exception as e:
         st.error("❌ **Prediction Engine Loading Failure Details:**")
         st.warning(f"System Message: {str(e)}")
+
 
 
 
