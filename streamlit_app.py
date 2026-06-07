@@ -247,22 +247,22 @@ with st.sidebar:
   input_df = pd.DataFrame(data, index=[0])
 
 
+# ----------------------------------------------------
+# 5. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE
+# ----------------------------------------------------
+
 # Main display expander block on the dashboard
 with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True):
     st.subheader('Live Inference Panel')
     st.write('Adjust the features in the left sidebar to classify a customer profile in real time.')
     
-    # Verify processing dependencies are active
-    dependencies_loaded = 'df_preprocessed' in locals() and 'df_labeled' in locals() and 'loaded_model' in locals()
-    
-    if dependencies_loaded:
+    # Direct Execution Loop with standalone error validation framework
+    try:
         # Display the active input features dataframe passed from your sidebar controls
         st.write('**Active User Input Features Matrix (Passed to Model):**')
         st.dataframe(input_df)
         
         # --- STRIP EXTRA FIELDS AND ENSURE PERFECT FEATURE ALIGNMENT ---
-        # We explicitly enforce the training sequence to guarantee your unscaled RF model receives
-        # the features in the exact structure it saw when you ran model.fit() in your notebook.
         training_features = ['MonetaryValue', 'Frequency', 'Recency']
         query_features = input_df[training_features]
         
@@ -307,7 +307,8 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
             st.metric(label="🟠 Cluster 3 (Re-Engage)", value=f"{val_p3:.1%}")
             st.progress(val_p3)
             
-    else:
-        st.warning("Prediction engine offline. Ensure 'models/random_forest_model.pkl' is uploaded to GitHub.")
+    except NameError:
+        st.warning("⚠️ Prediction engine initialization waiting for pipeline data. Ensure 'loaded_model' compiles successfully at the top of your script workspace.")
+    except Exception as e:
+        st.error(f"❌ Runtime Processing Error: {str(e)}")
 
-    
