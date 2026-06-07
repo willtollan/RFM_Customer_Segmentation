@@ -303,36 +303,16 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
             
         active_model = inline_load_model(model_path)
         
-        # Ensure the feature names match the sequence structure seen during training
+        # Explicitly enforce the training sequence to match your X_train column layout
         training_features = ['MonetaryValue', 'Frequency', 'Recency']
         query_features = input_df[training_features]
         
-        # --- Run Clean Example Predictions ---
+        # --- Apply model to make predictions (Exactly like Penguins example) ---
         prediction = active_model.predict(query_features)
         prediction_proba = active_model.predict_proba(query_features)
         
-        # --- DYNAMIC MATRIX NORMALIZATION ENGINE ---
-        # Checks if your model is structured as a Multi-Output list of arrays
-        if isinstance(prediction_proba, list):
-            # Extract the positive "Presence" probability (the second element, index 1) from each sub-array
-            extracted_probs = []
-            for cluster_output in prediction_proba:
-                # cluster_output is shaped [[prob_absence, prob_presence]]
-                prob_presence = float(cluster_output[0][1])
-                extracted_probs.append(prob_presence)
-            
-            # Divide each element by the total sum to force them to add up to exactly 1.0 (100%)
-            total_sum = sum(extracted_probs)
-            if total_sum > 0:
-                final_probabilities = [[p / total_sum for p in extracted_probs]]
-            else:
-                final_probabilities = [[0.25, 0.25, 0.25, 0.25]] # Fallback distribution
-        else:
-            # Standard single-target multi-class 1D matrix layout array
-            final_probabilities = prediction_proba
-            
-        # Build DataFrame directly from the safely formatted array vector
-        df_prediction_proba = pd.DataFrame(final_probabilities)
+        # Build DataFrame directly from prediction matrix arrays
+        df_prediction_proba = pd.DataFrame(prediction_proba)
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
         st.markdown("---")
@@ -343,16 +323,16 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
             df_prediction_proba,
             column_config={
                 'Retain': st.column_config.ProgressColumn(
-                    'Retain (Cluster 0)', format='%.1f%%', width='medium', min_value=0.0, max_value=1.0
+                    'Retain (Cluster 0)', format='%f', width='medium', min_value=0.0, max_value=1.0
                 ),
                 'Reward': st.column_config.ProgressColumn(
-                    'Reward (Cluster 1)', format='%.1f%%', width='medium', min_value=0.0, max_value=1.0
+                    'Reward (Cluster 1)', format='%f', width='medium', min_value=0.0, max_value=1.0
                 ),
                 'Nurture': st.column_config.ProgressColumn(
-                    'Nurture (Cluster 2)', format='%.1f%%', width='medium', min_value=0.0, max_value=1.0
+                    'Nurture (Cluster 2)', format='%f', width='medium', min_value=0.0, max_value=1.0
                 ),
                 'Re-Engage': st.column_config.ProgressColumn(
-                    'Re-Engage (Cluster 3)', format='%.1f%%', width='medium', min_value=0.0, max_value=1.0
+                    'Re-Engage (Cluster 3)', format='%f', width='medium', min_value=0.0, max_value=1.0
                 ),
             }, 
             hide_index=True,
@@ -362,22 +342,11 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         # --- Display Hard Prediction Outcome Banner ---
         st.subheader('Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
-        
-        # Flatten and extract the point classification safely matching array shapes
-        if isinstance(prediction, np.ndarray) and prediction.ndim > 1:
-            # If multi-output array format, extract the active index index
-            final_index = int(np.argmax(prediction[0]))
-        else:
-            final_index = int(prediction.item())
-            
-        st.success(f"🎯 Assigned Group: **{cluster_names[final_index]}**")
+        st.success(f"🎯 Assigned Group: **{cluster_names[prediction][0]}**")
             
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
-
-
-
 
 
 
