@@ -9,9 +9,12 @@ st.set_page_config(page_title="Machine Learning App", layout="wide")
 st.title('🤖 Machine Learning App')
 st.info('This app processes transaction data, analyzes customer cohorts, and deploys a live customer classification engine.')
 
-# 1. Define separate cached functions to load datasets and model artifacts
+# ----------------------------------------------------
+# 1. CACHED DATA & ARTIFACT LOADING FUNCTIONS
+# ----------------------------------------------------
 @st.cache_data
 def load_raw_data(file_path):
+    # Force 'Invoice' and 'StockCode' columns to strings to prevent PyArrow rendering crashes
     return pd.read_excel(file_path, nrows=1000, dtype={'Invoice': str, 'StockCode': str})
 
 @st.cache_data
@@ -39,17 +42,21 @@ def load_serialized_model(file_path):
     return joblib.load(file_path)
 
 
-# --- Load Base Files (Cached) ---
+# --- Safely Initialize Base Processing Dependencies (Cached) ---
 try:
     df_preprocessed = load_preprocessed_data('data/preprocessed_data.csv')
-    # Load model from the models folder path
+    df_labeled = load_labeled_data('data/preprocessed_labelled_data.csv')
     loaded_model = load_serialized_model('models/random_forest_model.pkl')
 except FileNotFoundError as e:
-    st.error(f"Initialization mismatch: {e}. Ensure all files exist in your repository branches.")
+    st.error(f"Initialization mismatch error: {e}. Please check your repository file paths.")
 
 
-# 2. Data Inspection Workspace Component
+# ----------------------------------------------------
+# 2. DATA INSPECTION WORKSPACE COMPONENT
+# ----------------------------------------------------
 with st.expander('Data Inspection Workspace', expanded=False):
+    
+    # --- Raw Data Section ---
     st.subheader('Raw Data')
     st.write('This is a preview (first 1000 rows) of the original transaction dataset from the source Excel file:')
     try:
@@ -60,6 +67,7 @@ with st.expander('Data Inspection Workspace', expanded=False):
 
     st.markdown("---") 
 
+    # --- Preprocessed Data Section ---
     st.subheader('Preprocessed Data')
     st.write('This is the fully aggregated, cleaned, and outlier-filtered RFM feature dataset:')
     try:
@@ -70,20 +78,28 @@ with st.expander('Data Inspection Workspace', expanded=False):
 
     st.markdown("---")
 
+    # --- Preprocessed Data with Labels Section ---
     st.subheader('Preprocessed Data with Labels')
     st.write('This is the feature dataset including the target label index and label name for classification:')
     try:
-        df_labeled = load_labeled_data('data/preprocessed_labelled_data.csv')
         st.dataframe(df_labeled)
         st.metric(label="Total Unique Labelled Customers", value=len(df_labeled))
+        
+        # --- Train/Test Split Note ---
         st.info("💡 **Modeling Note:** Prior to training, an **80% training and 20% testing split** was performed on this dataset. The split utilised **random shuffling** to remove structural order bias and **stratification** to strictly preserve original class balances across subsets.")
-    except FileNotFoundError:
-        st.error("Could not find 'data/preprocessed_labelled_data.csv'.")
+    except NameError:
+        st.error("Labeled dataframe not initialized.")
 
 
-# 3. KMeans Clustering Results and Visualisations Component
+# ----------------------------------------------------
+# 3. KMEANS CLUSTERING RESULTS AND VISUALISATIONS
+# ----------------------------------------------------
 with st.expander('KMeans Clustering Results and Visualisations', expanded=False):
+    
+    # --- Color-Coded Legend Section ---
     st.subheader('Cluster Reference Legend')
+    st.write('Use this color-coded key to identify segments across the visualizations below:')
+    
     leg_col1, leg_col2, leg_col3, leg_col4 = st.columns(4)
     with leg_col1:
         st.markdown('<div style="padding:10px; border-left: 5px solid #1f77b4; background-color: rgba(31, 119, 180, 0.1); border-radius: 4px;"><strong>Cluster 0: Retain</strong><br><span style="color:#1f77b4; font-weight:bold;">🔵 Blue Segment</span></div>', unsafe_allow_html=True)
@@ -95,7 +111,10 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
         st.markdown('<div style="padding:10px; border-left: 5px solid #ff7f0e; background-color: rgba(255, 127, 14, 0.1); border-radius: 4px;"><strong>Cluster 3: Re-Engage</strong><br><span style="color:#ff7f0e; font-weight:bold;">🟠 Orange Segment</span></div>', unsafe_allow_html=True)
                     
     st.markdown("---")
+    
+    # --- KMeans Centroids Section ---
     st.subheader('KMeans Centroids')
+    st.write('This table displays the calculated cluster centers (centroids) for each customer segment:')
     try:
         df_centroids = load_centroids_data('data/customer_centroids.csv')
         st.dataframe(df_centroids)
@@ -103,7 +122,11 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
         st.error("Could not find 'data/customer_centroids.csv'.")
         
     st.markdown("---")
+
+    # --- Elbow Method Section (Large Format Plot) ---
     st.subheader('Elbow Method: Optimal Number of Clusters (K)')
+    st.write('Evaluation of Within-Cluster Sum of Squares (WCSS) to determine the mathematically optimal cluster configuration:')
+    
     elbow_col1, elbow_col2, elbow_col3 = st.columns([0.5, 9, 0.5])
     with elbow_col2:
         try:
@@ -112,7 +135,11 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
             st.error("Could not find 'images/optimal_K_elbow_method.png'.")
         
     st.markdown("---")
+    
+    # --- 3D Scatter Plot Section (Standard Format Plot) ---
     st.subheader('KMeans Clusters 3D Scatter Plot given Features: Recency, Frequency and Monetary Value')
+    st.write('Visual spatial separation of your customer segments across the three RFM dimensions:')
+    
     col1, col2, col3 = st.columns([1.5, 5, 1.5])
     with col2:
         try:
@@ -121,7 +148,11 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
             st.error("Could not find 'images/KMeans_clusters.png'.")
         
     st.markdown("---")
+    
+    # --- Violin Plots Section (Standard Format Plot) ---
     st.subheader('Cluster Violin Plots by Feature')
+    st.write('Distribution spread and density of Recency, Frequency, and Monetary Value across each cluster:')
+    
     v_col1, v_col2, v_col3 = st.columns([1.5, 5, 1.5])
     with v_col2:
         try:
@@ -130,9 +161,15 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
             st.error("Could not find 'images/cluster_violinplot_by_features.png'.")
 
 
-# 4. Random Forest Classifier Performance Metrics Component
-with st.expander('Random Forest Classifier Evaluation Metrics', expanded=False):
+# ----------------------------------------------------
+# 4. RANDOM FOREST CLASSIFIER PERFORMANCE METRICS
+# ----------------------------------------------------
+with st.expander('Random Forest Classifier', expanded=False):
+    
+    # --- Random Forest Best Parameters ---
     st.subheader('Random Forest Best Parameters')
+    st.write('The optimal hyperparameters found during the grid search tuning optimization phase:')
+    
     param_col1, param_col2, param_col3 = st.columns([1.5, 5, 1.5])
     with param_col2:
         try:
@@ -141,7 +178,11 @@ with st.expander('Random Forest Classifier Evaluation Metrics', expanded=False):
             st.error("Could not find 'images/tuned_RF_best_params.png'.")
             
     st.markdown("---")
+    
+    # --- Key Metrics Section ---
     st.subheader('Key Metrics')
+    st.write('Overall evaluation metrics for the tuned Random Forest classification model:')
+    
     met_col1, met_col2, met_col3 = st.columns([1.5, 5, 1.5])
     with met_col2:
         try:
@@ -151,7 +192,11 @@ with st.expander('Random Forest Classifier Evaluation Metrics', expanded=False):
             st.error("Could not find 'data/tuned_RF_key_metrics.csv'.")
         
     st.markdown("---")
+    
+    # --- Classification Report Section ---
     st.subheader('Classification Report')
+    st.write('Detailed performance metrics breakdown including precision, recall, and f1-score per cluster target:')
+    
     rep_col1, rep_col2, rep_col3 = st.columns([1.5, 5, 1.5])
     with rep_col2:
         try:
@@ -161,7 +206,11 @@ with st.expander('Random Forest Classifier Evaluation Metrics', expanded=False):
             st.error("Could not find 'data/tuned_RF_classification_report.csv'.")
         
     st.markdown("---")
+    
+    # --- Confusion Matrix Section (Small Format Plot) ---
     st.subheader('Confusion Matrix')
+    st.write('Matrix visualising the actual versus predicted classification distributions on test data subsets:')
+    
     cm_col1, cm_col2, cm_col3 = st.columns(3)
     with cm_col2:
         try:
@@ -170,16 +219,20 @@ with st.expander('Random Forest Classifier Evaluation Metrics', expanded=False):
             st.error("Could not find 'images/tuned_RF_confusion_matrix.png'.")
 
 
-# 5. NEW Component: Interactive Live Customer Inference Engine
+# ----------------------------------------------------
+# 5. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE
+# ----------------------------------------------------
+
 with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True):
     st.subheader('Live Inference Panel')
     st.write('Adjust the features below to classify a hypothetical customer profile in real time.')
     
-    # Check if data and model loaded successfully before showing widgets
-    if 'df_preprocessed' in locals() and 'loaded_model' in locals():
-        # Setup side-by-side control widgets using columns
+    # Verify processing dependencies are active
+    dependencies_loaded = 'df_preprocessed' in locals() and 'df_labeled' in locals() and 'loaded_model' in locals()
+    
+    if dependencies_loaded:
+        # Build layout columns for features inputs
         input_col1, input_col2, input_col3 = st.columns(3)
-        
         with input_col1:
             val_recency = st.slider(
                 'Recency (Days since last checkout)', 
@@ -203,20 +256,55 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
                 step=10.0
             )
             
-        # Format input properties into a standard DataFrame matching your model's feature structure
-        # Ensure the feature names match the exact column names used during model.fit()
+        # Structure slider configurations into an isolated DataFrame row object
         query_features = pd.DataFrame([{
             'Recency': val_recency,
             'Frequency': val_frequency,
             'MonetaryValue': val_monetary
         }])
         
-        # --- Run Live Model Prediction ---
-        hard_prediction = loaded_model.predict(query_features)[0]
-        soft_prediction = loaded_model.predict_proba(query_features)[0]
+        # Strip labeling parameters and map training columns order sequences
+        training_features = [col for col in df_labeled.columns if col not in ['Customer ID', 'label_index', 'label_name']]
+        query_features = query_features[training_features]
+        
+        # Run real-time machine learning inference
+        raw_hard_pred = loaded_model.predict(query_features)
+        raw_soft_pred = loaded_model.predict_proba(query_features)
+        
+        # Isolate outputs securely to strip away NumPy array formats
+        final_hard_pred = int(raw_hard_pred.item())
+        final_soft_pred = raw_soft_pred.flatten()
         
         st.markdown("---")
         
-        # Mapping numerical hard predictions back to cluster string labels
-
+        # Map cluster indexes to text groupings
+        cluster_mapping = {0: "Retain", 1: "Reward", 2: "Nurture", 3: "Re-Engage"}
+        predicted_label = cluster_mapping.get(final_hard_pred, f"Cluster {final_hard_pred}")
+        
+        # Show prediction summary banner
+        st.markdown(f"### **Hard Prediction Outcome:** `Cluster {final_hard_pred}: {predicted_label}`")
+        
+        # Show breakdown probabilities
+        st.markdown("### **Soft Prediction Probabilities:**")
+        prob_col1, prob_col2, prob_col3, prob_col4 = st.columns(4)
+        
+        with prob_col1:
+            val_p0 = float(final_soft_pred.item(0))
+            st.metric(label="🔵 Cluster 0 (Retain)", value=f"{val_p0:.1%}")
+            st.progress(val_p0)
+        with prob_col2:
+            val_p1 = float(final_soft_pred.item(1))
+            st.metric(label="🔴 Cluster 1 (Reward)", value=f"{val_p1:.1%}")
+            st.progress(val_p1)
+        with prob_col3:
+            val_p2 = float(final_soft_pred.item(2))
+            st.metric(label="🟢 Cluster 2 (Nurture)", value=f"{val_p2:.1%}")
+            st.progress(val_p2)
+        with prob_col4:
+            val_p3 = float(final_soft_pred.item(3))
+            st.metric(label="🟠 Cluster 3 (Re-Engage)", value=f"{val_p3:.1%}")
+            st.progress(val_p3)
+            
+    else:
+        st.warning("Prediction engine offline. Check your file deployments inside your data and models folders.")
 
