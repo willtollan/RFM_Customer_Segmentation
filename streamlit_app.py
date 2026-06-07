@@ -74,6 +74,35 @@ with st.expander('Data Inspection Workspace', expanded=False):
 # 3. KMeans Clustering Results and Visualisations Component
 with st.expander('KMeans Clustering Results and Visualisations', expanded=True):
     
+    # --- New Color-Coded Legend Section ---
+    st.subheader('Cluster Reference Legend')
+    st.write('Use this color-coded key to identify segments across the visualizations below:')
+    
+    # Create 4 columns to place your clusters side-by-side
+    leg_col1, leg_col2, leg_col3, leg_col4 = st.columns(4)
+    
+    with leg_col1:
+        st.markdown('<div style="padding:10px; border-left: 5px solid #1f77b4; background-color: rgba(31, 119, 180, 0.1); border-radius: 4px;">'
+                    '<strong>Cluster 0: Retain</strong><br><span style="color:#1f77b4; font-weight:bold;">🔵 Blue Segment</span></div>', 
+                    unsafe_allow_html=True)
+                    
+    with leg_col2:
+        st.markdown('<div style="padding:10px; border-left: 5px solid #d62728; background-color: rgba(214, 39, 40, 0.1); border-radius: 4px;">'
+                    '<strong>Cluster 1: Reward</strong><br><span style="color:#d62728; font-weight:bold;">🔴 Red Segment</span></div>', 
+                    unsafe_allow_html=True)
+                    
+    with leg_col3:
+        st.markdown('<div style="padding:10px; border-left: 5px solid #2ca02c; background-color: rgba(44, 160, 44, 0.1); border-radius: 4px;">'
+                    '<strong>Cluster 2: Nurture</strong><br><span style="color:#2ca02c; font-weight:bold;">🟢 Green Segment</span></div>', 
+                    unsafe_allow_html=True)
+                    
+    with leg_col4:
+        st.markdown('<div style="padding:10px; border-left: 5px solid #ff7f0e; background-color: rgba(255, 127, 14, 0.1); border-radius: 4px;">'
+                    '<strong>Cluster 3: Re-Engage</strong><br><span style="color:#ff7f0e; font-weight:bold;">🟠 Orange Segment</span></div>', 
+                    unsafe_allow_html=True)
+                    
+    st.markdown("---")
+    
     # --- KMeans Centroids Section ---
     st.subheader('KMeans Centroids')
     st.write('This table displays the calculated cluster centers (centroids) for each customer segment:')
@@ -90,11 +119,9 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=True):
     st.subheader('KMeans Clusters 3D Scatter Plot given Features: Recency, Frequency and Monetary Value')
     st.write('Visual spatial separation of your customer segments across the three RFM dimensions:')
     
-    # Using a 1:5:1 column weight ratio gives the middle image column significantly more width
     col1, col2, col3 = st.columns([1, 5, 1])
     with col2:
         try:
-            # Increased width from 600 to 800 pixels for better scannability
             st.image('images/KMeans_clusters.png', width=800)
         except FileNotFoundError:
             st.error("Could not find 'images/KMeans_clusters.png'. Please check your repository folder path.")
@@ -105,13 +132,13 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=True):
     st.subheader('Cluster Violin Plots by Feature')
     st.write('Distribution spread and density of Recency, Frequency, and Monetary Value across each cluster:')
     
-    # Reusing the same wide column distribution matrix layout
     v_col1, v_col2, v_col3 = st.columns([1, 5, 1])
     with v_col2:
         try:
             st.image('images/cluster_violinplot_by_features.png', width=800)
         except FileNotFoundError:
             st.error("Could not find 'images/cluster_violinplot_by_features.png'. Please check your repository folder path.")
+
 
 
 
