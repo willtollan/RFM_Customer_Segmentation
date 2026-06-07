@@ -293,38 +293,33 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     st.write('Adjust the features in the left sidebar to classify a customer profile in real time.')
     
     try:
-        # Load your model from the models folder
-        import joblib
-        model_path = 'models/random_forest_model.pkl'
-        
+        # 1. LIVE MODEL TRAINING (Cached to prevent lag)
+        # We define a function inside Section 5 to train the model directly on your data
         @st.cache_resource
-        def inline_load_model(path):
-            return joblib.load(path)
+        def train_live_model(_data):
+            # Isolate the exact unscaled features used in your notebook split
+            X_train_live = _data[['MonetaryValue', 'Frequency', 'Recency']]
+            y_train_live = _data['label_index']  # Uses your numeric cluster label index
             
-        active_model = inline_load_model(model_path)
+            # Train the standard Multi-Class Classifier
+            clf = RandomForestClassifier(n_estimators=100, random_state=42)
+            clf.fit(X_train_live, y_train_live)
+            return clf
+
+        # Run the training function once using your already loaded labeled dataframe
+        with st.spinner('Training classification model live...'):
+            active_model = train_live_model(df_labeled)
         
-        # Explicitly enforce the training sequence to match your X_train column layout
+        # Ensure the feature names match the sequence structure seen during training
         training_features = ['MonetaryValue', 'Frequency', 'Recency']
         query_features = input_df[training_features]
         
-        # --- Apply model to make predictions ---
+        # 2. RUN INFERENCE (Exactly like the Penguins example)
         prediction = active_model.predict(query_features)
         prediction_proba = active_model.predict_proba(query_features)
         
-        # --- ABSOLUTE MULTI-CLASS NORMALIZATION CORRECTION ---
-        # Converts prediction output to a clean flat array list of floating numbers
-        raw_probabilities = np.asarray(prediction_proba).flatten()
-        
-        # Enforce strict relative scaling to guarantee values sum to exactly 1.0 (100.0%)
-        total_sum = float(np.sum(raw_probabilities))
-        if total_sum > 0:
-            normalized_probabilities = [float(p / total_sum) for p in raw_probabilities]
-        else:
-            # Safe absolute uniform distribution fallback profile if sum resolves to zero
-            normalized_probabilities = [0.25, 0.25, 0.25, 0.25]
-            
-        # Build DataFrame directly using the forced 100% probability list vector
-        df_prediction_proba = pd.DataFrame([normalized_probabilities])
+        # Build DataFrame directly from prediction matrix arrays
+        df_prediction_proba = pd.DataFrame(prediction_proba)
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
         st.markdown("---")
@@ -354,13 +349,12 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         # --- Display Hard Prediction Outcome Banner ---
         st.subheader('Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
-        
-        # Safely capture the point classification value
-        final_hard_index = int(np.argmax(normalized_probabilities))
-        st.success(f"🎯 Assigned Group: **{cluster_names[final_hard_index]}**")
+        st.success(f"🎯 Assigned Group: **{cluster_names[prediction][0]}**")
             
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
+        st.info("💡 Hint: Ensure your uploaded 'data/preprocessed_labelled_data.csv' file contains the column names 'MonetaryValue', 'Frequency', 'Recency', and 'label_index'.")
+
 
 
