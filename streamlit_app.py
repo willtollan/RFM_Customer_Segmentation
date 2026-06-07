@@ -289,7 +289,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     st.write('Adjust the features in the left sidebar to classify a customer profile in real time.')
     
     try:
-        # 1. LOAD PRE-TRAINED MODEL (Fast and preserves your tuning parameters)
+        # 1. LOAD PRE-TRAINED MODEL
         import joblib
         model_path = 'models/random_forest_model.pkl'
         
@@ -298,7 +298,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         def inline_load_serialized_model(path):
             return joblib.load(path)
             
-        active_model = inline_load_model(model_path) if 'inline_load_model' in locals() else inline_load_serialized_model(model_path)
+        active_model = inline_load_serialized_model(model_path)
         
         # Enforce column sequence structure to match your exact X_train notebook layout
         training_features = ['MonetaryValue', 'Frequency', 'Recency']
@@ -308,8 +308,8 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         prediction = active_model.predict(query_features)
         prediction_proba = active_model.predict_proba(query_features)
         
-        # Keep raw decimals intact so they remain within bounds [0.0, 1.0]
-        df_prediction_proba = pd.DataFrame(prediction_proba)
+        # --- SCALE FRACTIONS TO PERCENTAGES (0.30 -> 30.0) ---
+        df_prediction_proba = pd.DataFrame(prediction_proba * 100.0)
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
         st.markdown("---")
@@ -319,18 +319,18 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         st.dataframe(
             df_prediction_proba,
             column_config={
-                # 'percentage' natively formats a 0.30 decimal to 30.00% with a filled progress bar
+                # FIXED: Applied '%.2f%%' string notation and raised max_value to 100.0
                 'Retain': st.column_config.ProgressColumn(
-                    'Retain (Cluster 0)', format='percentage', width='medium', min_value=0.0, max_value=1.0
+                    'Retain (Cluster 0)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0
                 ),
                 'Reward': st.column_config.ProgressColumn(
-                    'Reward (Cluster 1)', format='percentage', width='medium', min_value=0.0, max_value=1.0
+                    'Reward (Cluster 1)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0
                 ),
                 'Nurture': st.column_config.ProgressColumn(
-                    'Nurture (Cluster 2)', format='percentage', width='medium', min_value=0.0, max_value=1.0
+                    'Nurture (Cluster 2)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0
                 ),
                 'Re-Engage': st.column_config.ProgressColumn(
-                    'Re-Engage (Cluster 3)', format='percentage', width='medium', min_value=0.0, max_value=1.0
+                    'Re-Engage (Cluster 3)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0
                 ),
             }, 
             hide_index=True,
@@ -345,6 +345,6 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
-        st.info("💡 Pro-Tip: If you get a 'version mismatch' or serialization error, open your Jupyter notebook, run `import sklearn; print(sklearn.__version__)`, and match that exact version inside your GitHub `requirements.txt` file.")
+
 
 
