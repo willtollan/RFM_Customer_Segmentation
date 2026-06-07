@@ -246,9 +246,68 @@ with st.sidebar:
           'Recency': Recency}
   input_df = pd.DataFrame(data, index=[0])
 
-with st.expander('Input features'):
-  st.write('**Input Features**')
-  input_df
 
+# Main display expander block on the dashboard
+with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True):
+    st.subheader('Live Inference Panel')
+    st.write('Adjust the features in the left sidebar to classify a customer profile in real time.')
+    
+    # Verify processing dependencies are active
+    dependencies_loaded = 'df_preprocessed' in locals() and 'df_labeled' in locals() and 'loaded_model' in locals()
+    
+    if dependencies_loaded:
+        # Display the active input features dataframe passed from your sidebar controls
+        st.write('**Active User Input Features Matrix (Passed to Model):**')
+        st.dataframe(input_df)
+        
+        # --- STRIP EXTRA FIELDS AND ENSURE PERFECT FEATURE ALIGNMENT ---
+        # We explicitly enforce the training sequence to guarantee your unscaled RF model receives
+        # the features in the exact structure it saw when you ran model.fit() in your notebook.
+        training_features = ['MonetaryValue', 'Frequency', 'Recency']
+        query_features = input_df[training_features]
+        
+        # --- Run Real-time Machine Learning Inference ---
+        raw_hard_pred = loaded_model.predict(query_features)
+        raw_soft_pred = loaded_model.predict_proba(query_features)
+        
+        # Extract plain Python values to avoid markdown array syntax layout breaks
+        final_hard_pred = int(raw_hard_pred.item())
+        final_soft_pred = raw_soft_pred.flatten()
+        
+        st.markdown("---")
+        
+        # Map cluster indexes back to text labels
+        cluster_mapping = {0: "Retain", 1: "Reward", 2: "Nurture", 3: "Re-Engage"}
+        predicted_label = cluster_mapping.get(final_hard_pred, f"Cluster {final_hard_pred}")
+        
+        # --- Display Hard Prediction Outcome ---
+        st.markdown(f"### **Hard Prediction Outcome:** `Cluster {final_hard_pred}: {predicted_label}`")
+        
+        # --- Display Soft Prediction Probabilities ---
+        st.markdown("### **Soft Prediction Probabilities:**")
+        prob_col1, prob_col2, prob_col3, prob_col4 = st.columns(4)
+        
+        with prob_col1:
+            val_p0 = float(final_soft_pred.item(0))
+            st.metric(label="🔵 Cluster 0 (Retain)", value=f"{val_p0:.1%}")
+            st.progress(val_p0)
+            
+        with prob_col2:
+            val_p1 = float(final_soft_pred.item(1))
+            st.metric(label="🔴 Cluster 1 (Reward)", value=f"{val_p1:.1%}")
+            st.progress(val_p1)
+            
+        with prob_col3:
+            val_p2 = float(final_soft_pred.item(2))
+            st.metric(label="🟢 Cluster 2 (Nurture)", value=f"{val_p2:.1%}")
+            st.progress(val_p2)
+            
+        with prob_col4:
+            val_p3 = float(final_soft_pred.item(3))
+            st.metric(label="🟠 Cluster 3 (Re-Engage)", value=f"{val_p3:.1%}")
+            st.progress(val_p3)
+            
+    else:
+        st.warning("Prediction engine offline. Ensure 'models/random_forest_model.pkl' is uploaded to GitHub.")
 
     
