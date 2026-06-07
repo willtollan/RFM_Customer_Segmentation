@@ -263,10 +263,9 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
             'MonetaryValue': val_monetary
         }])
         
-        # --- FIXED: HARDCODE FEATURE EXCLUSION BALANCING ---
-        # Instead of guessing from df_labeled, we force query_features to use these exact columns.
-        # IF your model was trained on different names (e.g., 'Monetary'), change these 3 strings below:
-        training_features = ['Recency', 'Frequency', 'MonetaryValue']
+        # --- FIXED: RE-ALIGNED TO EXACT NOTEBOOK TRAINING COLUMN SEQUENCE ---
+        # Re-ordering the list keys to exactly mirror the DataFrame setup from your training cells
+        training_features = ['MonetaryValue', 'Frequency', 'Recency']
         query_features = query_features[training_features]
         
         # Run real-time machine learning inference
@@ -309,5 +308,6 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
             
     else:
         st.warning("Prediction engine offline. Check your file deployments inside your data and models folders.")
+
 
 
