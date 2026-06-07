@@ -168,7 +168,6 @@ with st.expander('Random Forest Classifier', expanded=True):
     st.subheader('Random Forest Best Parameters')
     st.write('The optimal hyperparameters found during the grid search tuning optimization phase:')
     
-    # Centering the parameters image using your 800px display column layout
     param_col1, param_col2, param_col3 = st.columns([1.5, 5, 1.5])
     with param_col2:
         try:
@@ -210,9 +209,10 @@ with st.expander('Random Forest Classifier', expanded=True):
     st.subheader('Confusion Matrix')
     st.write('Matrix visualising the actual versus predicted classification distributions on test data subsets:')
     
-    cm_col1, cm_col2, cm_col3 = st.columns()
+    cm_col1, cm_col2, cm_col3 = st.columns(3)
     with cm_col2:
         try:
             st.image('images/tuned_RF_confusion_matrix.png', width=600)
         except FileNotFoundError:
             st.error("Could not find 'images/tuned_RF_confusion_matrix.png'. Please check your repository folder path.")
+
