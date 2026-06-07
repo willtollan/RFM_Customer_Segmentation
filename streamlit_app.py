@@ -119,11 +119,12 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=True):
     st.subheader('Elbow Method: Optimal Number of Clusters (K)')
     st.write('Evaluation of Within-Cluster Sum of Squares (WCSS) to determine the mathematically optimal cluster configuration:')
     
-    # FIXED: Added explicit integer count (3) to layout mapping matrices
-    elbow_col1, elbow_col2, elbow_col3 = st.columns(3)
+    # Using specific array ratios [0.5, 9, 0.5] allocates 90% of layout width to the center image column
+    elbow_col1, elbow_col2, elbow_col3 = st.columns([0.5, 9, 0.5])
     with elbow_col2:
         try:
-            st.image('images/optimal_K_elbow_method.png', width=800)
+            # Scaled up image layout size ceiling profile to 1100 pixels
+            st.image('images/optimal_K_elbow_method.png', width=1100)
         except FileNotFoundError:
             st.error("Could not find 'images/optimal_K_elbow_method.png'. Please check your repository folder path.")
         
@@ -133,11 +134,10 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=True):
     st.subheader('KMeans Clusters 3D Scatter Plot given Features: Recency, Frequency and Monetary Value')
     st.write('Visual spatial separation of your customer segments across the three RFM dimensions:')
     
-    # FIXED: Added explicit integer count (3) to column declaration
-    col1, col2, col3 = st.columns(3)
+    col1, col2, col3 = st.columns([0.5, 9, 0.5])
     with col2:
         try:
-            st.image('images/KMeans_clusters.png', width=800)
+            st.image('images/KMeans_clusters.png', width=1100)
         except FileNotFoundError:
             st.error("Could not find 'images/KMeans_clusters.png'. Please check your repository folder path.")
         
@@ -147,13 +147,13 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=True):
     st.subheader('Cluster Violin Plots by Feature')
     st.write('Distribution spread and density of Recency, Frequency, and Monetary Value across each cluster:')
     
-    # FIXED: Added explicit integer count (3) to column declaration
-    v_col1, v_col2, v_col3 = st.columns(3)
+    v_col1, v_col2, v_col3 = st.columns([0.5, 9, 0.5])
     with v_col2:
         try:
-            st.image('images/cluster_violinplot_by_features.png', width=800)
+            st.image('images/cluster_violinplot_by_features.png', width=1100)
         except FileNotFoundError:
             st.error("Could not find 'images/cluster_violinplot_by_features.png'. Please check your repository folder path.")
+
 
 
 
