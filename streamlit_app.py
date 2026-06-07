@@ -307,12 +307,24 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         training_features = ['MonetaryValue', 'Frequency', 'Recency']
         query_features = input_df[training_features]
         
-        # --- Apply model to make predictions (Exactly like Penguins example) ---
+        # --- Apply model to make predictions ---
         prediction = active_model.predict(query_features)
         prediction_proba = active_model.predict_proba(query_features)
         
-        # Build DataFrame directly from prediction matrix arrays
-        df_prediction_proba = pd.DataFrame(prediction_proba)
+        # --- ABSOLUTE MULTI-CLASS NORMALIZATION CORRECTION ---
+        # Converts prediction output to a clean flat array list of floating numbers
+        raw_probabilities = np.asarray(prediction_proba).flatten()
+        
+        # Enforce strict relative scaling to guarantee values sum to exactly 1.0 (100.0%)
+        total_sum = float(np.sum(raw_probabilities))
+        if total_sum > 0:
+            normalized_probabilities = [float(p / total_sum) for p in raw_probabilities]
+        else:
+            # Safe absolute uniform distribution fallback profile if sum resolves to zero
+            normalized_probabilities = [0.25, 0.25, 0.25, 0.25]
+            
+        # Build DataFrame directly using the forced 100% probability list vector
+        df_prediction_proba = pd.DataFrame([normalized_probabilities])
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
         st.markdown("---")
@@ -323,16 +335,16 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
             df_prediction_proba,
             column_config={
                 'Retain': st.column_config.ProgressColumn(
-                    'Retain (Cluster 0)', format='%f', width='medium', min_value=0.0, max_value=1.0
+                    'Retain (Cluster 0)', format='%.1f%%', width='medium', min_value=0.0, max_value=1.0
                 ),
                 'Reward': st.column_config.ProgressColumn(
-                    'Reward (Cluster 1)', format='%f', width='medium', min_value=0.0, max_value=1.0
+                    'Reward (Cluster 1)', format='%.1f%%', width='medium', min_value=0.0, max_value=1.0
                 ),
                 'Nurture': st.column_config.ProgressColumn(
-                    'Nurture (Cluster 2)', format='%f', width='medium', min_value=0.0, max_value=1.0
+                    'Nurture (Cluster 2)', format='%.1f%%', width='medium', min_value=0.0, max_value=1.0
                 ),
                 'Re-Engage': st.column_config.ProgressColumn(
-                    'Re-Engage (Cluster 3)', format='%f', width='medium', min_value=0.0, max_value=1.0
+                    'Re-Engage (Cluster 3)', format='%.1f%%', width='medium', min_value=0.0, max_value=1.0
                 ),
             }, 
             hide_index=True,
@@ -342,11 +354,13 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         # --- Display Hard Prediction Outcome Banner ---
         st.subheader('Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
-        st.success(f"🎯 Assigned Group: **{cluster_names[prediction][0]}**")
+        
+        # Safely capture the point classification value
+        final_hard_index = int(np.argmax(normalized_probabilities))
+        st.success(f"🎯 Assigned Group: **{cluster_names[final_hard_index]}**")
             
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
-
 
 
