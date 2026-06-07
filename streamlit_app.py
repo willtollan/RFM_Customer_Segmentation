@@ -1,6 +1,7 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
+import streamlit.components.v1 as components  # Required to render the HTML file
 from sklearn.ensemble import RandomForestClassifier
 
 # Configure layout to fit wide data tables comfortably
@@ -34,6 +35,12 @@ def load_rf_metrics(file_path):
 @st.cache_data
 def load_rf_report(file_path):
     return pd.read_csv(file_path)
+
+@st.cache_data
+def load_html_parameters(file_path):
+    # Opens and reads the raw HTML file contents into a string object
+    with open(file_path, 'r', encoding='utf-8') as f:
+        return f.read()
 
 
 # 2. Data Inspection Workspace Component
@@ -164,11 +171,26 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
 # 4. Random Forest Classifier Performance Metrics Component
 with st.expander('Random Forest Classifier', expanded=True):
     
+    # --- New Section: Random Forest Best Parameters ---
+    st.subheader('Random Forest Best Parameters')
+    st.write('The optimal hyperparameters found during the grid search tuning optimization phase:')
+    
+    # Centering the parameters table layout for symmetry
+    param_col1, param_col2, param_col3 = st.columns([1.5, 5, 1.5])
+    with param_col2:
+        try:
+            html_content = load_html_parameters('images/tuned_RF_params.html')
+            # Renders your raw HTML layout text cleanly. Adjust the height argument if your table clips.
+            components.html(html_content, height=250, scrolling=True)
+        except FileNotFoundError:
+            st.error("Could not find 'images/tuned_RF_params.html'. Please check your repository folder path.")
+            
+    st.markdown("---")
+    
     # --- Key Metrics Section ---
     st.subheader('Key Metrics')
     st.write('Overall evaluation metrics for the tuned Random Forest classification model:')
     
-    # Contained the table inside a balanced column structure to narrow its field footprint
     met_col1, met_col2, met_col3 = st.columns([1.5, 5, 1.5])
     with met_col2:
         try:
@@ -183,7 +205,6 @@ with st.expander('Random Forest Classifier', expanded=True):
     st.subheader('Classification Report')
     st.write('Detailed performance metrics breakdown including precision, recall, and f1-score per cluster target:')
     
-    # Contained the table inside a balanced column structure to narrow its field footprint
     rep_col1, rep_col2, rep_col3 = st.columns([1.5, 5, 1.5])
     with rep_col2:
         try:
@@ -198,10 +219,10 @@ with st.expander('Random Forest Classifier', expanded=True):
     st.subheader('Confusion Matrix')
     st.write('Matrix visualising the actual versus predicted classification distributions on test data subsets:')
     
-    cm_col1, cm_col2, cm_col3 = st.columns([2, 4, 2])
+    cm_col1, cm_col2, cm_col3 = st.columns()
     with cm_col2:
         try:
             st.image('images/tuned_RF_confusion_matrix.png', width=600)
         except FileNotFoundError:
-            st.error("Could not find 'images/tuned_RF_confusion_matrix.png'. Please check your repository folder path.")
+
 
