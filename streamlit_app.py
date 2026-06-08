@@ -19,7 +19,7 @@ LABELS = {
 # 2. Cached Pipeline: Load pre-trained model & anchor SHAP with background data
 @st.cache_resource
 def load_production_assets():
-    # Load your existing pre-trained model from the 'models/' folder
+    # Load your pre-trained model directly from the 'models/' folder
     with open("models/random_forest_model.pkl", "rb") as f:
         rf_clf = pickle.load(f)
         
@@ -28,22 +28,23 @@ def load_production_assets():
     X = df[['MonetaryValue', 'Frequency', 'Recency']]
     y = df['Cluster']
     
-    # Recreate the train split to grab the background data distribution
+    # Recreate the exact train split to grab the background distribution rules
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, shuffle=True, random_state=42, stratify=y
     )
     
-    # Initialize the SHAP explainer anchored on X_train to preserve true class imbalance
-    explainer = shap.TreeExplainer(rf_clf, data=X_train)
+    # FIX: Using standard shap.Explainer factory pattern instead of TreeExplainer
+    # This automatically prevents the "safe_instance" experimental validation crash
+    explainer = shap.Explainer(rf_clf, data=X_train)
     
     return rf_clf, explainer
 
-# Trigger loading sequences or gracefully stop on error
+# Trigger loading sequences or gracefully stop on path error
 with st.spinner("🔄 Loading pre-trained model and syncing SHAP baseline distributions..."):
     try:
         rf_clf, explainer = load_production_assets()
     except FileNotFoundError as e:
-        st.error(f"⚠️ Configuration error: Verify that your dataset exists in 'data/' and your pre-trained model file exists in 'models/'. Missing: {e.filename}")
+        st.error(f"⚠️ Configuration error: Verify your files are in the right folders on GitHub. Missing: {e.filename}")
         st.stop()
 
 # 3. Sidebar Input Elements for Features
@@ -71,7 +72,7 @@ recency = st.sidebar.slider(
     step=1
 )
 
-# Convert active user configuration settings into a operational single-row Dataframe
+# Convert active user settings into a single-row DataFrame matching the model features
 user_input_df = pd.DataFrame([{
     'MonetaryValue': monetary_value,
     'Frequency': frequency,
@@ -106,7 +107,7 @@ with col2:
 st.write("---")
 st.subheader(f"🔍 SHAP Waterfall Explanation for Cluster: {predicted_label}")
 
-# Execute calculations against current user coordinates
+# Execute calculations against current user inputs using call syntax
 shap_output = explainer(user_input_df)
 
 fig, ax = plt.subplots(figsize=(8, 4.5))
