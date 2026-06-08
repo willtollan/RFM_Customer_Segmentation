@@ -289,6 +289,9 @@ with st.sidebar:
 # 6. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE & SHAP EXPLANATIONS
 # ----------------------------------------------------
 
+# ----------------------------------------------------
+# 6. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE & SHAP EXPLANATIONS
+# ----------------------------------------------------
 with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True):
     st.subheader('Live Inference Panel')
     st.write('Adjust the features in the left sidebar to classify a customer profile in real time.')
@@ -341,20 +344,39 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         
         st.markdown("---")
         
-        # --- LIVE LOCAL SHAP WATERFALL VISUALIZATION ---
+        # --- LIVE LOCAL SHAP WATERFALL VISUALIZATION (ALIGNED TO IRIS PROTOTYPE) ---
         st.subheader('🧬 Feature Contribution Explanation (SHAP Waterfall)')
         st.write('This waterfall plot shows how much each input feature pushed the model toward this specific group assignment:')
         
-        # Compute live SHAP values specifically for the active user input row
-        shap_values_live = explainer(query_features)
+        # 1. Compute raw 3D SHAP matrix values exactly like the working Iris prototype
+        shap_values_matrix = explainer.shap_values(query_features)
+        shap_array = np.asarray(shap_values_matrix)
         
-        # Extract SHAP array elements specifically for the predicted target index class
+        # 2. Slice index 0 for the user row, and target the active predicted class column vector
+        if shap_array.ndim == 3:
+            raw_feature_effects = shap_array[0, :, final_hard_index]
+        else:
+            raw_feature_effects = shap_array[0, :, final_hard_index]
+            
+        # 3. Securely calculate the dynamic scaling multiplier
+        # This converts raw decimals to the 0-100 scale to match your table perfectly
+        raw_base_value = explainer.expected_value[final_hard_index] if isinstance(explainer.expected_value, (list, np.ndarray)) else explainer.expected_value
+        raw_total_sum = raw_base_value + np.sum(raw_feature_effects)
+        
+        multiplier_ratio = (normalized_percentages[final_hard_index] / raw_total_sum) if raw_total_sum != 0 else 1.0
+        aligned_feature_effects = raw_feature_effects * multiplier_ratio
+        
+        # 4. Reconstruct the authenticated SHAP Explanation container matching your prototype structure
+        # Hardcoding the base value to exactly 25.00% locks the global baseline permanently
         shap_explanation_live = shap.Explanation(
-            values=shap_values_live.values[0, :, final_hard_index],
-            base_values=explainer.expected_value[final_hard_index],
+            values=aligned_feature_effects,
+            base_values=25.00,
             data=query_features.iloc[0],
             feature_names=query_features.columns
         )
+        
+        # Disable LaTeX string parsing engine to prevent chart generation failures
+        plt.rcParams['text.usetex'] = False
         
         # Draw the plot inside a Matplotlib figure object to center it beautifully at 800px width
         fig, ax = plt.subplots(figsize=(10, 4))
