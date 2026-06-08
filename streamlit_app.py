@@ -311,14 +311,29 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         prediction = rf_estimator.predict(query_features)
         prediction_proba = rf_estimator.predict_proba(query_features)
         
-        # --- FIXED: STRICT RESHAPING AND BOUNDARY BOUNDING ENGINE ---
-        # 1. Force the array into a pure, flat 1-dimensional list to completely remove nested dimensions
-        flat_proba = np.asarray(prediction_proba).reshape(-1)
-        
-        # 2. Convert raw decimals to percentages (e.g., 0.3548 -> 35.48%) and clamp boundaries for safety
-        normalized_percentages = np.clip(flat_proba * 100.0, 0.0, 100.0)
+        # --- FIXED: ACCURATE MULTI-OUTPUT LIST UNPACKING & NORMALIZATION ---
+        # This checks if scikit-learn returned a list of arrays (Multi-Output shape structure)
+        if isinstance(prediction_proba, list) and len(prediction_proba) == 4:
+            extracted_probs = []
+            for cluster_output in prediction_proba:
+                # cluster_output shape is (1, 2) -> [[prob_absence, prob_presence]]
+                # We squeeze the array and extract index 1 (the true probability of customer presence)
+                prob_presence = float(np.asarray(cluster_output).flatten()[1])
+                extracted_probs.append(prob_presence)
+            raw_scores = np.array(extracted_probs)
+        else:
+            # Standard single-target multi-class 1D matrix layout fallback array
+            raw_scores = np.asarray(prediction_proba).flatten()
             
-        # Build DataFrame directly using the verified probability vector row
+        # Proportional Scaling Normalization: Forces all 4 class metrics to sum to exactly 1.0 (100%)
+        # This eliminates the duplicate 100% blocks and balances your dashboard metrics smoothly
+        total_score_sum = float(np.sum(raw_scores))
+        if total_score_sum > 0:
+            normalized_percentages = (raw_scores / total_score_sum) * 100.0
+        else:
+            normalized_percentages = np.array([25.0, 25.0, 25.0, 25.0]) # Uniform fallback
+            
+        # Build DataFrame directly using the forced 100.00% maximum probability vector row
         df_prediction_proba = pd.DataFrame([normalized_percentages])
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
@@ -342,8 +357,8 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         st.subheader('Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
         
-        # Safely parse the hard assignment index from the flat array shape
-        final_hard_index = int(np.asarray(prediction).flatten()[0])
+        # Safely capture the correct point classification assignment index matching the highest percentage
+        final_hard_index = int(np.argmax(normalized_percentages))
         st.success(f"🎯 Assigned Group: **{cluster_names[final_hard_index]}**")
         
         st.markdown("---")
@@ -378,6 +393,5 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
-
 
 
