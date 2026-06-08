@@ -301,24 +301,35 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         training_features = ['MonetaryValue', 'Frequency', 'Recency']
         query_features = input_df[training_features]
         
-        # --- FIXED: EXTRACT RAW ESTIMATOR FROM PIPELINE TO PREVENT DATA CORRUPTION ---
-        # If your pre-trained model contains a scikit-learn pipeline layout,
-        # we pull out the raw classifier component so predict_proba behaves normally.
+        # --- EXTRACT ESTIMATOR FROM PIPELINE COHORT IF APPLICABLE ---
         if hasattr(loaded_model, 'named_steps'):
             rf_estimator = loaded_model.named_steps['clf']
         else:
             rf_estimator = loaded_model
 
-        # --- RUN INFERENCE USING EXTRACTED CLASSIFIER ESTIMATOR ---
+        # --- RUN INFERENCE USING PRE-TRAINED ESTIMATOR ---
         prediction = rf_estimator.predict(query_features)
         prediction_proba = rf_estimator.predict_proba(query_features)
         
-        # Ensure the multi-class array layout maps to a clean, flat 1D sequence structure
-        flat_proba = np.asarray(prediction_proba).flatten()
-        
-        # Scale true decimals to progress percentages (0.3548 -> 35.48%)
+        # --- FIXED: ACCURATE MULTI-OUTPUT EXTRACTION ENGINE ---
+        # Checks if your model outputs as a list of arrays (Multi-Output structure)
+        if isinstance(prediction_proba, list):
+            # Extract the true "Presence" probability (the second element, index 1) from each sub-array block
+            extracted_probs = []
+            for cluster_array in prediction_proba:
+                # cluster_array shape is (1, 2) -> [[probability_of_absence, probability_of_presence]]
+                prob_presence = float(cluster_array[0][1])
+                extracted_probs.append(prob_presence)
+            
+            # Reconstruct into a clean 1D numpy array list profile
+            raw_scores = np.array(extracted_probs)
+        else:
+            # Standard single-target multi-class 1D matrix layout array
+            raw_scores = np.asarray(prediction_proba).flatten()
+            
+        # Scale true decimals to clean progress percentages (0.3548 -> 35.48%)
         # This keeps the math identical to your notebook and perfectly matches the SHAP f(x)
-        normalized_percentages = flat_probs = flat_proba * 100.0
+        normalized_percentages = raw_scores * 100.0
             
         # Build DataFrame directly using the verified probability vector
         df_prediction_proba = pd.DataFrame([normalized_percentages])
@@ -343,9 +354,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         # --- Display Hard Prediction Outcome Banner ---
         st.subheader('Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
-        
-        # Safely parse the definitive integer category index target
-        final_hard_index = int(np.asarray(prediction).flatten()[0])
+        final_hard_index = int(np.argmax(normalized_percentages))
         st.success(f"🎯 Assigned Group: **{cluster_names[final_hard_index]}**")
         
         st.markdown("---")
@@ -358,6 +367,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         shap_values_live = explainer(query_features)
         
         # Extract SHAP array elements specifically for the predicted target index class
+        # Handled slicing seamlessly for scikit-learn's multiclass output dimension mappings
         shap_explanation_live = shap.Explanation(
             values=shap_values_live.values[0, :, final_hard_index],
             base_values=explainer.expected_value[final_hard_index],
@@ -380,6 +390,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
+
 
 
 
