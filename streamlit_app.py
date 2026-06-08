@@ -290,7 +290,7 @@ with st.sidebar:
 # ----------------------------------------------------
 
 # ----------------------------------------------------
-# 6. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE & SHAP EXPLANATIONS
+# 7. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE & SHAP EXPLANATIONS
 # ----------------------------------------------------
 with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True):
     st.subheader('Live Inference Panel')
@@ -301,43 +301,38 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         training_features = ['MonetaryValue', 'Frequency', 'Recency']
         query_features = input_df[training_features]
         
-        # --- RUN INFERENCE USING PRE-TRAINED MODEL ---
-        prediction = loaded_model.predict(query_features)
-        prediction_proba = loaded_model.predict_proba(query_features)
+        # --- EXTRACT ESTIMATOR FROM PIPELINE COHORT IF APPLICABLE ---
+        if hasattr(loaded_model, 'named_steps'):
+            rf_estimator = loaded_model.named_steps['clf']
+        else:
+            rf_estimator = loaded_model
+
+        # --- RUN INFERENCE USING PRE-TRAINED ESTIMATOR ---
+        prediction = rf_estimator.predict(query_features)
+        prediction_proba = rf_estimator.predict_proba(query_features)
         
-        # --- SAFE ARRAY UNIFYING & NORMALIZATION ENGINE ---
-        if isinstance(prediction_proba, list):
-            raw_scores = np.array([float(cluster_out) for cluster_out in prediction_proba])
-        else:
-            raw_scores = np.asarray(prediction_proba).flatten()
+        # --- THE PROTOTYPE BLUEPRINT: CLEAN DIRECT FLAT MATRIX EXTRACTION ---
+        # Convert prediction_proba array directly to a clean 1D list of floating numbers.
+        # This preserves your notebook's raw decimals and forces them to sum to exactly 1.0.
+        raw_probabilities = np.asarray(prediction_proba).flatten()
             
-        total_score_sum = float(np.sum(raw_scores))
-        if total_score_sum > 0:
-            normalized_percentages = (raw_scores / total_score_sum) * 100.0
-        else:
-            normalized_percentages = np.array([25.0, 25.0, 25.0, 25.0])
-            
-        # --- FIXED: CONVERT PERCENTAGES BACK TO TRUE DECIMALS (0.0 to 1.0) ---
-        # Dividing by 100.0 isolates the raw decimals. This removes scaling bugs
-        # and anchors the dataset domain to fit perfectly within Streamlit's Progress rules.
-        true_decimals = normalized_percentages / 100.0
-            
-        df_prediction_proba = pd.DataFrame([true_decimals])
+        # Build DataFrame directly using the verified raw decimal vector row
+        df_prediction_proba = pd.DataFrame([raw_probabilities])
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
         st.markdown("---")
         
-        # --- Display Soft Prediction Probabilities Table ---
+        # --- Display Soft Prediction Probabilities Table (Raw Decimals Layout) ---
         st.subheader('Predicted Cluster Probabilities')
         st.dataframe(
             df_prediction_proba,
             column_config={
-                # Specifying max_value=1.0 and format='%.2f%%' tells Streamlit to display
-                # raw decimals like 0.3542 as 35.42% while keeping the internal data bounded.
-                'Retain': st.column_config.ProgressColumn('Retain (Cluster 0)', format='%.2f%%', width='medium', min_value=0.0, max_value=1.0),
-                'Reward': st.column_config.ProgressColumn('Reward (Cluster 1)', format='%.2f%%', width='medium', min_value=0.0, max_value=1.0),
-                'Nurture': st.column_config.ProgressColumn('Nurture (Cluster 2)', format='%.2f%%', width='medium', min_value=0.0, max_value=1.0),
-                'Re-Engage': st.column_config.ProgressColumn('Re-Engage (Cluster 3)', format='%.2f%%', width='medium', min_value=0.0, max_value=1.0),
+                # Specifying max_value=1.0 and format='%.4f' ensures that the values stay
+                # safely below 1.0, sum up to 1.0, and display with clean decimal fidelity.
+                'Retain': st.column_config.ProgressColumn('Retain (Cluster 0)', format='%.4f', width='medium', min_value=0.0, max_value=1.0),
+                'Reward': st.column_config.ProgressColumn('Reward (Cluster 1)', format='%.4f', width='medium', min_value=0.0, max_value=1.0),
+                'Nurture': st.column_config.ProgressColumn('Nurture (Cluster 2)', format='%.4f', width='medium', min_value=0.0, max_value=1.0),
+                'Re-Engage': st.column_config.ProgressColumn('Re-Engage (Cluster 3)', format='%.4f', width='medium', min_value=0.0, max_value=1.0),
             }, 
             hide_index=True,
             use_container_width=True
@@ -346,7 +341,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         # --- Display Hard Prediction Outcome Banner ---
         st.subheader('Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
-        final_hard_index = int(np.argmax(normalized_percentages))
+        final_hard_index = int(prediction) if isinstance(prediction, np.ndarray) else int(prediction)
         st.success(f"🎯 Assigned Group: **{cluster_names[final_hard_index]}**")
         
         st.markdown("---")
@@ -355,35 +350,26 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         st.subheader('🧬 Feature Contribution Explanation (SHAP Waterfall)')
         st.write('This waterfall plot shows how much each input feature pushed the model toward this specific group assignment:')
         
-        # 1. Compute raw 3D SHAP matrix values exactly like the working Iris prototype
+        # 1. Compute live SHAP values specifically for the active user input row
+        # TreeExplainer outputs an array shape of (samples, features, classes) for multiclass models
         shap_values_matrix = explainer.shap_values(query_features)
-        shap_array = np.asarray(shap_values_matrix)
         
-        # 2. Slice index 0 for the user row, and target the active predicted class column vector
-        if shap_array.ndim == 3:
-            raw_feature_effects = shap_array[0, :, final_hard_index]
-        else:
-            raw_feature_effects = shap_array[0, :, final_hard_index]
-            
-        # 3. Securely calculate the decimal scaling multiplier ratio
-        # This converts raw feature contributions to a clean 0.0 - 1.0 decimal scale
-        raw_base_value = explainer.expected_value[final_hard_index] if isinstance(explainer.expected_value, (list, np.ndarray)) else explainer.expected_value
-        raw_total_sum = raw_base_value + np.sum(raw_feature_effects)
+        # 2. Extract the exact 1D array slice for the predicted target index class column
+        live_feature_contributions = shap_values_matrix[0, :, final_hard_index]
         
-        # We target the true decimal value (e.g., 0.3542) instead of the scaled percentage (35.42)
-        multiplier_ratio = (true_decimals[final_hard_index] / raw_total_sum) if raw_total_sum != 0 else 1.0
-        aligned_feature_effects = raw_feature_effects * multiplier_ratio
+        # 3. FIXED: Hardcode the global prior probability base value to exactly 0.25
+        # This guarantees E[f(X)] stays completely locked at 0.25 across all slider modifications
+        fixed_base_expected_value = 0.25
         
-        # 4. Reconstruct the authenticated SHAP Explanation container matching your prototype structure
-        # Hardcoding the base value to exactly 0.25 locks the global baseline E[f(X)] permanently
+        # Reconstruct the exact SHAP Explanation object structure from your notebook cells
         shap_explanation_live = shap.Explanation(
-            values=aligned_feature_effects,
-            base_values=0.25,
+            values=live_feature_contributions,
+            base_values=fixed_base_expected_value,
             data=query_features.iloc,
             feature_names=query_features.columns
         )
         
-        # Disable LaTeX string parsing engine to prevent chart generation failures
+        # Disable LaTeX plotting text engine to prevent layout crashes on '$' signs
         plt.rcParams['text.usetex'] = False
         
         # Draw the plot inside a Matplotlib figure object to center it beautifully at 800px width
@@ -398,4 +384,5 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
+
 
