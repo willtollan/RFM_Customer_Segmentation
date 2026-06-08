@@ -25,7 +25,7 @@ def train_and_initialize_explainer():
     X = df[['MonetaryValue', 'Frequency', 'Recency']]
     y = df['Cluster']
     
-    # Train/Test Split (as configured in your original script)
+    # Train/Test Split (exactly as configured in your original training script)
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, shuffle=True, random_state=42, stratify=y
     )
@@ -34,8 +34,9 @@ def train_and_initialize_explainer():
     rf_clf = RandomForestClassifier(n_estimators=100, random_state=42)
     rf_clf.fit(X_train, y_train)
     
-    # Initialize the SHAP TreeExplainer
-    explainer = shap.TreeExplainer(rf_clf)
+    # FIX: Explicitly pass X_train here to calculate empirical data distribution means.
+    # This prevents the baseline from defaulting to an unweighted 0.25.
+    explainer = shap.TreeExplainer(rf_clf, data=X_train)
     
     return rf_clf, explainer
 
@@ -44,7 +45,7 @@ with st.spinner("🔄 Training Random Forest and initializing SHAP explainer..."
     try:
         rf_clf, explainer = train_and_initialize_explainer()
     except FileNotFoundError:
-        st.error("⚠️ Data file not found! Please upload 'full_clustering_df.csv' into your 'data/' folder on GitHub.")
+        st.error("⚠️ Data file not found! Please upload 'preprocessed_labelled_data.csv' into your 'data/' folder on GitHub.")
         st.stop()
 
 # 3. Sidebar Input Elements for Features
@@ -107,16 +108,17 @@ with col2:
 st.write("---")
 st.subheader(f"🔍 SHAP Waterfall Explanation for Cluster: {predicted_label}")
 
-# Compute SHAP values for the specific input metrics
+# Compute SHAP values using the modern __call__ syntax for the user's specific inputs
 shap_output = explainer(user_input_df)
 
 fig, ax = plt.subplots(figsize=(8, 4.5))
 
-# Plot the waterfall diagram using correct structural array slicing
+# FIX: Plot the waterfall diagram using correct structural array slicing from shap_output.
+# base_values is now extracted directly from the explanation object (reflecting the class imbalance)
 shap.plots.waterfall(
     shap.Explanation(
         values=shap_output.values[0, :, hard_prediction],
-        base_values=explainer.expected_value[hard_prediction],
+        base_values=shap_output.base_values[0, hard_prediction], 
         data=user_input_df.iloc[0],
         feature_names=user_input_df.columns
     ),
@@ -125,5 +127,4 @@ shap.plots.waterfall(
 
 plt.tight_layout()
 st.pyplot(fig)
-
 
