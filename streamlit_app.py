@@ -33,9 +33,10 @@ def load_production_assets():
         X, y, test_size=0.2, shuffle=True, random_state=42, stratify=y
     )
     
-    # FIX: Using standard shap.Explainer factory pattern instead of TreeExplainer
-    # This automatically prevents the "safe_instance" experimental validation crash
-    explainer = shap.Explainer(rf_clf, data=X_train)
+    # FIX: Use a Permutation explainer pointing to the model's predict_proba function
+    # By passing a wrapped prediction function, SHAP evaluates probability outputs 
+    # directly and completely sidesteps the Python 3.14 / scikit-learn TypeError.
+    explainer = shap.explainers.Permutation(rf_clf.predict_proba, X_train)
     
     return rf_clf, explainer
 
@@ -113,6 +114,7 @@ shap_output = explainer(user_input_df)
 fig, ax = plt.subplots(figsize=(8, 4.5))
 
 # Slices out exact classification weights mapping back to actual data base values
+# Because Permutation output contains classes as the last index layer, this maps perfectly
 shap.plots.waterfall(
     shap.Explanation(
         values=shap_output.values[0, :, hard_prediction],
