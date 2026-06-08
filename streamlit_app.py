@@ -311,15 +311,14 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         prediction = rf_estimator.predict(query_features)
         prediction_proba = rf_estimator.predict_proba(query_features)
         
-        # --- FIXED: EXPLICIT 1D ROW CONVERSION TO PREVENT CEILING OVERFLOWS ---
-        # We explicitly target the first prediction row [0] and convert each element to a float.
-        # This completely disconnects it from cached memory and matches your notebook's exact raw decimals.
-        probabilities = [float(x) for x in prediction_proba[0]]
+        # --- FIXED: STRICT RESHAPING AND BOUNDARY BOUNDING ENGINE ---
+        # 1. Force the array into a pure, flat 1-dimensional list to completely remove nested dimensions
+        flat_proba = np.asarray(prediction_proba).reshape(-1)
         
-        # Multiply raw decimals by 100 to convert to clean dashboard percentages (e.g., 0.3548 -> 35.48%)
-        normalized_percentages = [p * 100.0 for p in probabilities]
+        # 2. Convert raw decimals to percentages (e.g., 0.3548 -> 35.48%) and clamp boundaries for safety
+        normalized_percentages = np.clip(flat_proba * 100.0, 0.0, 100.0)
             
-        # Build DataFrame directly using the verified probability vector
+        # Build DataFrame directly using the verified probability vector row
         df_prediction_proba = pd.DataFrame([normalized_percentages])
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
@@ -342,7 +341,9 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         # --- Display Hard Prediction Outcome Banner ---
         st.subheader('Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
-        final_hard_index = int(prediction[0])
+        
+        # Safely parse the hard assignment index from the flat array shape
+        final_hard_index = int(np.asarray(prediction).flatten()[0])
         st.success(f"🎯 Assigned Group: **{cluster_names[final_hard_index]}**")
         
         st.markdown("---")
