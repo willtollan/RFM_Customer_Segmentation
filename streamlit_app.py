@@ -311,26 +311,27 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         prediction = rf_estimator.predict(query_features)
         prediction_proba = rf_estimator.predict_proba(query_features)
         
-        # --- FIXED: KEEP RAW MULTI-CLASS DECIMALS INTACT (0.0 to 1.0) ---
-        # This mirrors your Jupyter notebook and stops columns from exceeding 1.0
+        # --- WORKFLOW SIMPLIFICATION: STANDARDIZED DECIMALS (0.0 TO 1.0) ---
+        # Convert prediction_proba directly into a clean, flat 1D array row of raw floats.
+        # This completely strips layout quirks and guarantees they sum to exactly 1.0.
         raw_probabilities = np.asarray(prediction_proba).flatten()
         
-        # Build DataFrame directly using the verified raw probability vector row
+        # Build DataFrame directly using the verified raw decimal vector row
         df_prediction_proba = pd.DataFrame([raw_probabilities])
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
         st.markdown("---")
         
-        # --- Display Soft Prediction Probabilities Table ---
+        # --- Display Soft Prediction Probabilities Table (Raw Decimals Layout) ---
         st.subheader('Predicted Cluster Probabilities')
         st.dataframe(
             df_prediction_proba,
             column_config={
-                # Specifying max_value=1.0 tells Streamlit to convert 0.30 directly into a beautiful 30.00% progress bar
-                'Retain': st.column_config.ProgressColumn('Retain (Cluster 0)', format='%.2f%%', width='medium', min_value=0.0, max_value=1.0),
-                'Reward': st.column_config.ProgressColumn('Reward (Cluster 1)', format='%.2f%%', width='medium', min_value=0.0, max_value=1.0),
-                'Nurture': st.column_config.ProgressColumn('Nurture (Cluster 2)', format='%.2f%%', width='medium', min_value=0.0, max_value=1.0),
-                'Re-Engage': st.column_config.ProgressColumn('Re-Engage (Cluster 3)', format='%.2f%%', width='medium', min_value=0.0, max_value=1.0),
+                # Displaying raw decimals via standard number configuration format boundaries
+                'Retain': st.column_config.ProgressColumn('Retain (Cluster 0)', format='%.4f', width='medium', min_value=0.0, max_value=1.0),
+                'Reward': st.column_config.ProgressColumn('Reward (Cluster 1)', format='%.4f', width='medium', min_value=0.0, max_value=1.0),
+                'Nurture': st.column_config.ProgressColumn('Nurture (Cluster 2)', format='%.4f', width='medium', min_value=0.0, max_value=1.0),
+                'Re-Engage': st.column_config.ProgressColumn('Re-Engage (Cluster 3)', format='%.4f', width='medium', min_value=0.0, max_value=1.0),
             }, 
             hide_index=True,
             use_container_width=True
@@ -354,15 +355,15 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         # 2. Extract the exact 1D array slice for the predicted target index class column
         live_feature_contributions = shap_values_matrix[0, :, final_hard_index]
         
-        # 3. FIXED: Hardcode the global prior probability base value to exactly 0.25
-        # This guarantees E[f(X)] stays completely locked at 0.25 across all slider modifications
+        # 3. FIXED: Hardcode the global prior probability baseline expected value to exactly 0.25
+        # This keeps the bottom waterfall baseline E[f(X)] permanently locked at 0.25 across all slider states
         fixed_base_expected_value = 0.25
         
         # Reconstruct the exact SHAP Explanation object structure from your notebook cells
         shap_explanation_live = shap.Explanation(
             values=live_feature_contributions,
             base_values=fixed_base_expected_value,
-            data=query_features.iloc,
+            data=query_features.iloc[0],
             feature_names=query_features.columns
         )
         
@@ -381,6 +382,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
+
 
 
 
