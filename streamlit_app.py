@@ -19,9 +19,13 @@ LABELS = {
 # 2. Cached Pipeline: Load pre-trained model & anchor SHAP with background data
 @st.cache_resource
 def load_production_assets():
-    # Load your pre-trained model directly from the 'models/' folder
+    # Load your pre-trained model pipeline directly from the 'models/' folder
     with open("models/random_forest_model.pkl", "rb") as f:
-        rf_clf = pickle.load(f)
+        loaded_pipeline = pickle.load(f)
+    
+    # FIX: Extract the actual RandomForestClassifier from your pipeline steps
+    # This matches your notebook's named_steps['clf'] syntax and restores predict_proba
+    rf_clf = loaded_pipeline.named_steps['clf']
         
     # Load raw data to extract the exact background split for SHAP
     df = pd.read_csv("data/preprocessed_labelled_data.csv")
@@ -33,9 +37,8 @@ def load_production_assets():
         X, y, test_size=0.2, shuffle=True, random_state=42, stratify=y
     )
     
-    # FIX: Use a Permutation explainer pointing to the model's predict_proba function
-    # By passing a wrapped prediction function, SHAP evaluates probability outputs 
-    # directly and completely sidesteps the Python 3.14 / scikit-learn TypeError.
+    # FIX: Wrap the extracted classifier's predict_proba function.
+    # This bypasses the Python 3.14/scikit-learn internal structure check entirely.
     explainer = shap.explainers.Permutation(rf_clf.predict_proba, X_train)
     
     return rf_clf, explainer
@@ -46,6 +49,9 @@ with st.spinner("🔄 Loading pre-trained model and syncing SHAP baseline distri
         rf_clf, explainer = load_production_assets()
     except FileNotFoundError as e:
         st.error(f"⚠️ Configuration error: Verify your files are in the right folders on GitHub. Missing: {e.filename}")
+        st.stop()
+    except KeyError:
+        st.error("⚠️ Pipeline structural error: Could not find a step named 'clf' inside your model file.")
         st.stop()
 
 # 3. Sidebar Input Elements for Features
@@ -114,7 +120,6 @@ shap_output = explainer(user_input_df)
 fig, ax = plt.subplots(figsize=(8, 4.5))
 
 # Slices out exact classification weights mapping back to actual data base values
-# Because Permutation output contains classes as the last index layer, this maps perfectly
 shap.plots.waterfall(
     shap.Explanation(
         values=shap_output.values[0, :, hard_prediction],
@@ -127,3 +132,4 @@ shap.plots.waterfall(
 
 plt.tight_layout()
 st.pyplot(fig)
+
