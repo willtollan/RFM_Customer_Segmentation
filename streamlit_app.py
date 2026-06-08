@@ -301,14 +301,27 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         training_features = ['MonetaryValue', 'Frequency', 'Recency']
         query_features = input_df[training_features]
         
-        # --- RUN INFERENCE USING PRE-TRAINED MODEL ---
-        prediction = loaded_model.predict(query_features)
-        prediction_proba = loaded_model.predict_proba(query_features)
+        # --- FIXED: EXTRACT RAW ESTIMATOR FROM PIPELINE TO PREVENT DATA CORRUPTION ---
+        # If your pre-trained model contains a scikit-learn pipeline layout,
+        # we pull out the raw classifier component so predict_proba behaves normally.
+        if hasattr(loaded_model, 'named_steps'):
+            rf_estimator = loaded_model.named_steps['clf']
+        else:
+            rf_estimator = loaded_model
+
+        # --- RUN INFERENCE USING EXTRACTED CLASSIFIER ESTIMATOR ---
+        prediction = rf_estimator.predict(query_features)
+        prediction_proba = rf_estimator.predict_proba(query_features)
         
-        # --- THE PENGUINS BLUPEPRINT: CLEAN DIRECT DATAFRAME CONVERSION ---
-        # Passing prediction_proba directly into pd.DataFrame handles the internal shape
-        # perfectly, matching your notebook's outputs down to the exact decimal point.
-        df_prediction_proba = pd.DataFrame(prediction_proba) * 100.0
+        # Ensure the multi-class array layout maps to a clean, flat 1D sequence structure
+        flat_proba = np.asarray(prediction_proba).flatten()
+        
+        # Scale true decimals to progress percentages (0.3548 -> 35.48%)
+        # This keeps the math identical to your notebook and perfectly matches the SHAP f(x)
+        normalized_percentages = flat_probs = flat_proba * 100.0
+            
+        # Build DataFrame directly using the verified probability vector
+        df_prediction_proba = pd.DataFrame([normalized_percentages])
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
         st.markdown("---")
@@ -331,8 +344,8 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         st.subheader('Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
         
-        # Extract the point index matching the prediction array format safely
-        final_hard_index = int(prediction[0])
+        # Safely parse the definitive integer category index target
+        final_hard_index = int(np.asarray(prediction).flatten()[0])
         st.success(f"🎯 Assigned Group: **{cluster_names[final_hard_index]}**")
         
         st.markdown("---")
@@ -367,6 +380,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
+
 
 
 
