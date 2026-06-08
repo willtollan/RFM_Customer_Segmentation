@@ -311,25 +311,13 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         prediction = rf_estimator.predict(query_features)
         prediction_proba = rf_estimator.predict_proba(query_features)
         
-        # --- FIXED: ACCURATE MULTI-OUTPUT EXTRACTION ENGINE ---
-        # Checks if your model outputs as a list of arrays (Multi-Output structure)
-        if isinstance(prediction_proba, list):
-            # Extract the true "Presence" probability (the second element, index 1) from each sub-array block
-            extracted_probs = []
-            for cluster_array in prediction_proba:
-                # cluster_array shape is (1, 2) -> [[probability_of_absence, probability_of_presence]]
-                prob_presence = float(cluster_array[0][1])
-                extracted_probs.append(prob_presence)
-            
-            # Reconstruct into a clean 1D numpy array list profile
-            raw_scores = np.array(extracted_probs)
-        else:
-            # Standard single-target multi-class 1D matrix layout array
-            raw_scores = np.asarray(prediction_proba).flatten()
-            
-        # Scale true decimals to clean progress percentages (0.3548 -> 35.48%)
-        # This keeps the math identical to your notebook and perfectly matches the SHAP f(x)
-        normalized_percentages = raw_scores * 100.0
+        # --- FIXED: EXPLICIT 1D ROW CONVERSION TO PREVENT CEILING OVERFLOWS ---
+        # We explicitly target the first prediction row [0] and convert each element to a float.
+        # This completely disconnects it from cached memory and matches your notebook's exact raw decimals.
+        probabilities = [float(x) for x in prediction_proba[0]]
+        
+        # Multiply raw decimals by 100 to convert to clean dashboard percentages (e.g., 0.3548 -> 35.48%)
+        normalized_percentages = [p * 100.0 for p in probabilities]
             
         # Build DataFrame directly using the verified probability vector
         df_prediction_proba = pd.DataFrame([normalized_percentages])
@@ -354,7 +342,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         # --- Display Hard Prediction Outcome Banner ---
         st.subheader('Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
-        final_hard_index = int(np.argmax(normalized_percentages))
+        final_hard_index = int(prediction[0])
         st.success(f"🎯 Assigned Group: **{cluster_names[final_hard_index]}**")
         
         st.markdown("---")
@@ -367,7 +355,6 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         shap_values_live = explainer(query_features)
         
         # Extract SHAP array elements specifically for the predicted target index class
-        # Handled slicing seamlessly for scikit-learn's multiclass output dimension mappings
         shap_explanation_live = shap.Explanation(
             values=shap_values_live.values[0, :, final_hard_index],
             base_values=explainer.expected_value[final_hard_index],
@@ -390,10 +377,6 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
-
-
-
-
 
 
 
