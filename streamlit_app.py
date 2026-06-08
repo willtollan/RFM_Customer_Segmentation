@@ -305,15 +305,16 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         prediction = loaded_model.predict(query_features)
         prediction_proba = loaded_model.predict_proba(query_features)
         
-        # --- FIXED: SAFE 1D FLATTENING TO PREVENT OVER-100% SPLITS ---
-        # This securely flattens the multi-class array to isolate the 4 baseline scores
+        # --- FIXED: ACCURATE MULTI-OUTPUT NESTED ROW UNPACKING ---
+        # If your model outputs a list of arrays, extract the true active 'Presence' probability 
+        # (index 1) for each cluster to recreate your notebook's exact raw distribution row.
         if isinstance(prediction_proba, list):
             raw_scores = np.array([float(cluster_out[0][1]) for cluster_out in prediction_proba])
         else:
             raw_scores = np.asarray(prediction_proba).flatten()
             
-        # Multiply by 100 to convert your true decimals into clean percentages (0.30 -> 30.00%)
-        # This keeps the math identical to your notebook without inflating the numbers
+        # Multiply by 100 to convert your true decimals into clean percentages (e.g., 0.3548 -> 35.48%)
+        # This preserves your notebook's exact raw decimals and perfectly matches the SHAP f(x)
         normalized_percentages = raw_scores * 100.0
             
         # Build DataFrame directly using the verified probability vector
@@ -360,7 +361,6 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         )
         
         # --- FIXED: DISABLE LATEX PLOT PARSING ENGINE TO PREVENT CRASHES ---
-        # This tells Matplotlib to render text normally, which stops the system from breaking on the '$' symbol.
         plt.rcParams['text.usetex'] = False
         
         # Draw the plot inside a Matplotlib figure object to center it beautifully at 800px width
@@ -375,6 +375,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
+
 
 
 
