@@ -297,38 +297,50 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     st.write('Adjust the features in the left sidebar to classify a customer profile in real time.')
     
     try:
-        # Enforce column sequence structure to match your exact X_train notebook layout
+        # 1. LIVE MODEL TRAINING (Cached to prevent dashboard lag)
+        # Replicates your exact notebook training data setup using your loaded dataframe
+        @st.cache_resource
+        def train_live_model_and_explainer(_data):
+            # Extract features and targets matching your exact notebook column names
+            X_train_live = _data[['MonetaryValue', 'Frequency', 'Recency']]
+            y_train_live = _data['Cluster']  # Verified target column containing 0, 1, 2, 3
+            
+            # Train the identical standard single-target Multi-Class Classifier
+            clf = RandomForestClassifier(n_estimators=100, random_state=42)
+            clf.fit(X_train_live, y_train_live)
+            
+            # Initialize the TreeExplainer straight on the freshly trained classifier
+            explainer = shap.TreeExplainer(clf)
+            return clf, explainer
+
+        # Run the training loop once using your uploaded labeled dataframe
+        with st.spinner('Training classification model live...'):
+            active_model, active_explainer = train_live_model_and_explainer(df_labeled)
+        
+        # Enforce column sequence structure to match your input configurations
         training_features = ['MonetaryValue', 'Frequency', 'Recency']
         query_features = input_df[training_features]
         
-        # --- EXTRACT ESTIMATOR FROM PIPELINE COHORT IF APPLICABLE ---
-        if hasattr(loaded_model, 'named_steps'):
-            rf_estimator = loaded_model.named_steps['clf']
-        else:
-            rf_estimator = loaded_model
-
-        # --- RUN INFERENCE USING PRE-TRAINED ESTIMATOR ---
-        prediction = rf_estimator.predict(query_features)
-        prediction_proba = rf_estimator.predict_proba(query_features)
+        # 2. RUN INFERENCE USING FRESH ESTIMATOR (Matches Iris Prototype)
+        prediction = active_model.predict(query_features)
+        prediction_proba = active_model.predict_proba(query_features)
         
-        # --- THE PROTOTYPE BLUEPRINT: CLEAN DIRECT FLAT MATRIX EXTRACTION ---
-        # Convert prediction_proba array directly to a clean 1D list of floating numbers.
-        # This preserves your notebook's raw decimals and forces them to sum to exactly 1.0.
+        # Convert prediction_proba directly into a clean 1D array row of raw floats
+        # This completely strips multi-output layouts and guarantees they sum to exactly 1.0
         raw_probabilities = np.asarray(prediction_proba).flatten()
-            
+        
         # Build DataFrame directly using the verified raw decimal vector row
         df_prediction_proba = pd.DataFrame([raw_probabilities])
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
         st.markdown("---")
         
-        # --- Display Soft Prediction Probabilities Table (Raw Decimals Layout) ---
+        # --- Display Soft Prediction Probabilities Table ---
         st.subheader('Predicted Cluster Probabilities')
         st.dataframe(
             df_prediction_proba,
             column_config={
-                # Specifying max_value=1.0 and format='%.4f' ensures that the values stay
-                # safely below 1.0, sum up to 1.0, and display with clean decimal fidelity.
+                # Displays raw decimals cleanly while keeping values strictly bounded up to 1.0
                 'Retain': st.column_config.ProgressColumn('Retain (Cluster 0)', format='%.4f', width='medium', min_value=0.0, max_value=1.0),
                 'Reward': st.column_config.ProgressColumn('Reward (Cluster 1)', format='%.4f', width='medium', min_value=0.0, max_value=1.0),
                 'Nurture': st.column_config.ProgressColumn('Nurture (Cluster 2)', format='%.4f', width='medium', min_value=0.0, max_value=1.0),
@@ -341,8 +353,8 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         # --- Display Hard Prediction Outcome Banner ---
         st.subheader('Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
-        final_hard_index = int(prediction) if isinstance(prediction, np.ndarray) else int(prediction)
-        st.success(f"🎯 Assigned Group: **{cluster_names[final_hard_index]}**")
+        final_hard_index = int(prediction)
+        st.success(f"🎯 Assigned Group (Hard Prediction): **{cluster_names[final_hard_index]}**")
         
         st.markdown("---")
         
@@ -350,15 +362,13 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         st.subheader('🧬 Feature Contribution Explanation (SHAP Waterfall)')
         st.write('This waterfall plot shows how much each input feature pushed the model toward this specific group assignment:')
         
-        # 1. Compute live SHAP values specifically for the active user input row
-        # TreeExplainer outputs an array shape of (samples, features, classes) for multiclass models
-        shap_values_matrix = explainer.shap_values(query_features)
+        # Compute live SHAP values specifically for the active user input row
+        shap_values_matrix = active_explainer.shap_values(query_features)
         
-        # 2. Extract the exact 1D array slice for the predicted target index class column
+        # Extract the exact 1D array slice for the predicted target index class column
         live_feature_contributions = shap_values_matrix[0, :, final_hard_index]
         
-        # 3. FIXED: Hardcode the global prior probability base value to exactly 0.25
-        # This guarantees E[f(X)] stays completely locked at 0.25 across all slider modifications
+        # Hardcode the global baseline expected value to exactly 0.25 to prevent shifting errors
         fixed_base_expected_value = 0.25
         
         # Reconstruct the exact SHAP Explanation object structure from your notebook cells
@@ -384,5 +394,6 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
+
 
 
