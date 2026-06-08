@@ -305,20 +305,10 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         prediction = loaded_model.predict(query_features)
         prediction_proba = loaded_model.predict_proba(query_features)
         
-        # --- FIXED: ACCURATE MULTI-OUTPUT NESTED ROW UNPACKING ---
-        # If your model outputs a list of arrays, extract the true active 'Presence' probability 
-        # (index 1) for each cluster to recreate your notebook's exact raw distribution row.
-        if isinstance(prediction_proba, list):
-            raw_scores = np.array([float(cluster_out[0][1]) for cluster_out in prediction_proba])
-        else:
-            raw_scores = np.asarray(prediction_proba).flatten()
-            
-        # Multiply by 100 to convert your true decimals into clean percentages (e.g., 0.3548 -> 35.48%)
-        # This preserves your notebook's exact raw decimals and perfectly matches the SHAP f(x)
-        normalized_percentages = raw_scores * 100.0
-            
-        # Build DataFrame directly using the verified probability vector
-        df_prediction_proba = pd.DataFrame([normalized_percentages])
+        # --- THE PENGUINS BLUPEPRINT: CLEAN DIRECT DATAFRAME CONVERSION ---
+        # Passing prediction_proba directly into pd.DataFrame handles the internal shape
+        # perfectly, matching your notebook's outputs down to the exact decimal point.
+        df_prediction_proba = pd.DataFrame(prediction_proba) * 100.0
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
         st.markdown("---")
@@ -340,7 +330,9 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         # --- Display Hard Prediction Outcome Banner ---
         st.subheader('Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
-        final_hard_index = int(np.argmax(normalized_percentages))
+        
+        # Extract the point index matching the prediction array format safely
+        final_hard_index = int(prediction[0])
         st.success(f"🎯 Assigned Group: **{cluster_names[final_hard_index]}**")
         
         st.markdown("---")
@@ -360,7 +352,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
             feature_names=query_features.columns
         )
         
-        # --- FIXED: DISABLE LATEX PLOT PARSING ENGINE TO PREVENT CRASHES ---
+        # Disable LaTeX plotting text engine to prevent layout crashes on '$' signs
         plt.rcParams['text.usetex'] = False
         
         # Draw the plot inside a Matplotlib figure object to center it beautifully at 800px width
