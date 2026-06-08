@@ -289,6 +289,9 @@ with st.sidebar:
 # 6. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE & SHAP EXPLANATIONS
 # ----------------------------------------------------
 
+# ----------------------------------------------------
+# 7. DYNAMIC LIVE CUSTOMER INFERENCE ENGINE & SHAP EXPLANATIONS
+# ----------------------------------------------------
 with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True):
     st.subheader('Live Inference Panel')
     st.write('Adjust the features in the left sidebar to classify a customer profile in real time.')
@@ -302,18 +305,22 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         prediction = loaded_model.predict(query_features)
         prediction_proba = loaded_model.predict_proba(query_features)
         
-        # --- SAFE ARRAY UNIFYING & NORMALIZATION ENGINE ---
+        # --- CLEAN UNCONSTRAINED PROBABILITY PARSING ENGINE ---
         if isinstance(prediction_proba, list):
+            # If multi-output structure, keep normalization fallback to handle formatting anomalies
             raw_scores = np.array([float(cluster_out[0][1]) for cluster_out in prediction_proba])
+            total_score_sum = float(np.sum(raw_scores))
+            if total_score_sum > 0:
+                normalized_percentages = (raw_scores / total_score_sum) * 100.0
+            else:
+                normalized_percentages = np.array([25.0, 25.0, 25.0, 25.0])
         else:
-            raw_scores = np.asarray(prediction_proba).flatten()
+            # Standard single-target multi-class array
+            # Multiply raw probabilities by 100 directly without dividing by a sum total
+            # This preserves your notebook's exact raw decimals and perfectly matches the SHAP f(x)
+            normalized_percentages = np.asarray(prediction_proba).flatten() * 100.0
             
-        total_score_sum = float(np.sum(raw_scores))
-        if total_score_sum > 0:
-            normalized_percentages = (raw_scores / total_score_sum) * 100.0
-        else:
-            normalized_percentages = np.array([25.0, 25.0, 25.0, 25.0])
-            
+        # Build DataFrame directly using the identical raw probability distribution vector
         df_prediction_proba = pd.DataFrame([normalized_percentages])
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
@@ -368,5 +375,6 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
+
 
 
