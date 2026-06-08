@@ -307,7 +307,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         
         # --- SAFE ARRAY UNIFYING & NORMALIZATION ENGINE ---
         if isinstance(prediction_proba, list):
-            raw_scores = np.array([float(cluster_out[0][1]) for cluster_out in prediction_proba])
+            raw_scores = np.array([float(cluster_out) for cluster_out in prediction_proba])
         else:
             raw_scores = np.asarray(prediction_proba).flatten()
             
@@ -317,7 +317,12 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         else:
             normalized_percentages = np.array([25.0, 25.0, 25.0, 25.0])
             
-        df_prediction_proba = pd.DataFrame([normalized_percentages])
+        # --- FIXED: CONVERT PERCENTAGES BACK TO TRUE DECIMALS (0.0 to 1.0) ---
+        # Dividing by 100.0 isolates the raw decimals. This removes scaling bugs
+        # and anchors the dataset domain to fit perfectly within Streamlit's Progress rules.
+        true_decimals = normalized_percentages / 100.0
+            
+        df_prediction_proba = pd.DataFrame([true_decimals])
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
         st.markdown("---")
@@ -327,10 +332,12 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         st.dataframe(
             df_prediction_proba,
             column_config={
-                'Retain': st.column_config.ProgressColumn('Retain (Cluster 0)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0),
-                'Reward': st.column_config.ProgressColumn('Reward (Cluster 1)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0),
-                'Nurture': st.column_config.ProgressColumn('Nurture (Cluster 2)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0),
-                'Re-Engage': st.column_config.ProgressColumn('Re-Engage (Cluster 3)', format='%.2f%%', width='medium', min_value=0.0, max_value=100.0),
+                # Specifying max_value=1.0 and format='%.2f%%' tells Streamlit to display
+                # raw decimals like 0.3542 as 35.42% while keeping the internal data bounded.
+                'Retain': st.column_config.ProgressColumn('Retain (Cluster 0)', format='%.2f%%', width='medium', min_value=0.0, max_value=1.0),
+                'Reward': st.column_config.ProgressColumn('Reward (Cluster 1)', format='%.2f%%', width='medium', min_value=0.0, max_value=1.0),
+                'Nurture': st.column_config.ProgressColumn('Nurture (Cluster 2)', format='%.2f%%', width='medium', min_value=0.0, max_value=1.0),
+                'Re-Engage': st.column_config.ProgressColumn('Re-Engage (Cluster 3)', format='%.2f%%', width='medium', min_value=0.0, max_value=1.0),
             }, 
             hide_index=True,
             use_container_width=True
@@ -344,7 +351,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         
         st.markdown("---")
         
-        # --- LIVE LOCAL SHAP WATERFALL VISUALIZATION (ALIGNED TO IRIS PROTOTYPE) ---
+        # --- LIVE LOCAL SHAP WATERFALL VISUALIZATION ---
         st.subheader('🧬 Feature Contribution Explanation (SHAP Waterfall)')
         st.write('This waterfall plot shows how much each input feature pushed the model toward this specific group assignment:')
         
@@ -358,20 +365,21 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         else:
             raw_feature_effects = shap_array[0, :, final_hard_index]
             
-        # 3. Securely calculate the dynamic scaling multiplier
-        # This converts raw decimals to the 0-100 scale to match your table perfectly
+        # 3. Securely calculate the decimal scaling multiplier ratio
+        # This converts raw feature contributions to a clean 0.0 - 1.0 decimal scale
         raw_base_value = explainer.expected_value[final_hard_index] if isinstance(explainer.expected_value, (list, np.ndarray)) else explainer.expected_value
         raw_total_sum = raw_base_value + np.sum(raw_feature_effects)
         
-        multiplier_ratio = (normalized_percentages[final_hard_index] / raw_total_sum) if raw_total_sum != 0 else 1.0
+        # We target the true decimal value (e.g., 0.3542) instead of the scaled percentage (35.42)
+        multiplier_ratio = (true_decimals[final_hard_index] / raw_total_sum) if raw_total_sum != 0 else 1.0
         aligned_feature_effects = raw_feature_effects * multiplier_ratio
         
         # 4. Reconstruct the authenticated SHAP Explanation container matching your prototype structure
-        # Hardcoding the base value to exactly 25.00% locks the global baseline permanently
+        # Hardcoding the base value to exactly 0.25 locks the global baseline E[f(X)] permanently
         shap_explanation_live = shap.Explanation(
             values=aligned_feature_effects,
-            base_values=25.00,
-            data=query_features.iloc[0],
+            base_values=0.25,
+            data=query_features.iloc,
             feature_names=query_features.columns
         )
         
@@ -390,3 +398,4 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
+
