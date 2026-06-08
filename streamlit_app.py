@@ -1,35 +1,31 @@
 import streamlit as st
 import numpy as np
 import pandas as pd
-import joblib
 import shap
 import matplotlib.pyplot as plt
+from sklearn.ensemble import RandomForestClassifier
 
 st.set_page_config(page_title="Customer Classification MVP", layout="wide")
 st.title('🔮 Customer Segmentation Live Inference Classifier')
-st.info('Adjust the features in the sidebar to classify a customer profile and view SHAP visual explanations in real time.')
+st.info('This MVP builds your model from scratch to guarantee perfect alignment between the data table and the SHAP waterfall plot.')
 
 # ----------------------------------------------------
-# 1. CORE LOADERS & STATE SYNCHRONIZERS
+# 1. CORE DATA LOADERS
 # ----------------------------------------------------
-@st.cache_resource
-def load_assets():
-    # Load your pre-trained model directly from the models folder
-    model = joblib.load('models/random_forest_model.pkl')
-    
-    # Initialize the TreeExplainer directly on the Random Forest estimator matching your notebook
-    if hasattr(model, 'named_steps'):
-        rf_clf = model.named_steps['clf']
-    else:
-        rf_clf = model
-    explainer = shap.TreeExplainer(rf_clf)
-    
-    return model, explainer
+@st.cache_data
+def load_preprocessed_data(file_path):
+    return pd.read_csv(file_path)
 
+@st.cache_data
+def load_labeled_data(file_path):
+    return pd.read_csv(file_path)
+
+# --- Load Base Files (Cached) ---
 try:
-    loaded_model, explainer = load_assets()
-except FileNotFoundError:
-    st.error("❌ Missing required file path. Ensure 'models/random_forest_model.pkl' is uploaded to your GitHub repository.")
+    df_preprocessed = load_preprocessed_data('data/preprocessed_data.csv')
+    df_labeled = load_labeled_data('data/preprocessed_labelled_data.csv')
+except FileNotFoundError as e:
+    st.error(f"❌ Missing file error: {e}. Please ensure your datasets exist in the data/ folder.")
 
 # --- Sidebar Callback Sync Logic ---
 def sync_mv_slider():
@@ -71,41 +67,45 @@ with st.sidebar:
     input_df = pd.DataFrame(data, index=[0])
 
 # ----------------------------------------------------
-# 2. MODEL INFERENCE & SOFT MAX NORMALIZATION
+# 2. LIVE MODEL TRAINING & SHAP EXPLAINER INITIALIZATION
 # ----------------------------------------------------
-if 'loaded_model' in locals():
+if 'df_labeled' in locals():
+    @st.cache_resource
+    def train_live_model_and_explainer(_data):
+        # Isolate features and target column exactly matching your working notebook configurations
+        X_train_live = _data[['MonetaryValue', 'Frequency', 'Recency']]
+        y_train_live = _data['Cluster']  
+        
+        # Train a clean, standard single-target Multi-Class Classifier
+        clf = RandomForestClassifier(n_estimators=100, random_state=42)
+        clf.fit(X_train_live, y_train_live)
+        
+        # Initialize the TreeExplainer straight on the freshly trained classifier
+        explainer = shap.TreeExplainer(clf)
+        return clf, explainer
+
+    with st.spinner('Training classification model live...'):
+        active_model, active_explainer = train_live_model_and_explainer(df_labeled)
+
+# ----------------------------------------------------
+# 3. RUN MODEL INFERENCE
+# ----------------------------------------------------
+if 'active_model' in locals():
     try:
         # Enforce strict column order structure matching your notebook's X_train matrix format
         training_features = ['MonetaryValue', 'Frequency', 'Recency']
         query_features = input_df[training_features]
         
-        # Execute raw model predictions
-        prediction = loaded_model.predict(query_features)
-        prediction_proba = loaded_model.predict_proba(query_features)
+        # Execute predictions (Decimals bounded exactly between 0.0 and 1.0)
+        prediction = active_model.predict(query_features)
+        prediction_proba = active_model.predict_proba(query_features)
         
-        # --- FIXED: ACCURATE MULTI-OUTPUT NESTED LIST UNPACKING ENGINE ---
-        if isinstance(prediction_proba, list) and len(prediction_proba) == 4:
-            extracted_probs = []
-            for cluster_output in prediction_proba:
-                prob_presence = float(np.asarray(cluster_output).flatten()[1])
-                extracted_probs.append(prob_presence)
-            raw_scores = np.array(extracted_probs)
-        else:
-            raw_scores = np.asarray(prediction_proba).flatten()
-            
-        # Normalization Step: Forces columns to add up to exactly 1.0
-        total_sum = float(np.sum(raw_scores))
-        if total_sum > 0:
-            normalized_probabilities = raw_scores / total_sum
-        else:
-            normalized_probabilities = np.array([0.25, 0.25, 0.25, 0.25])
-            
-        # Structure metrics directly into a 1-row pandas DataFrame
-        df_prediction_proba = pd.DataFrame([normalized_probabilities])
+        # Convert probability matrix directly into a DataFrame (Sums up exactly to 1.0)
+        df_prediction_proba = pd.DataFrame(prediction_proba)
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
         # --- Display Soft Predictions Data Table Grid ---
-        st.subheader('Predicted Cluster Probabilities')
+        st.subheader('1. Predicted Cluster Probabilities')
         st.dataframe(
             df_prediction_proba,
             column_config={
@@ -119,37 +119,30 @@ if 'loaded_model' in locals():
         )
         
         # --- Display Hard Prediction Success Box Outcome ---
-        st.subheader('Predicted Customer Segment')
+        st.subheader('2. Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
-        final_hard_index = int(np.argmax(normalized_probabilities))
+        final_hard_index = int(prediction[0])
         st.success(f"🎯 Assigned Group: **{cluster_names[final_hard_index]}**")
         
         st.markdown("---")
         
         # ----------------------------------------------------
-        # 3. LIVE SHAP WATERFALL VISUALIZATION CONTEXT
+        # 4. LIVE SHAP WATERFALL VISUALIZATION CONTEXT
         # ----------------------------------------------------
-        st.subheader('🧬 Feature Contribution Explanation (SHAP Waterfall)')
-        st.write('This plot breaks down how much individual feature sliders drove this classification outcome:')
+        st.subheader('3. Live SHAP Feature Contribution Explanation')
         
-        # --- FIXED: USING EXPLICIT EXPERIMENTAL MATRIX METHOD (MATCHES PROTOTYPE) ---
-        shap_values_matrix = explainer.shap_values(query_features)
-        shap_array = np.asarray(shap_values_matrix)
+        # Compute live raw SHAP matrix values for the active user input row
+        # TreeExplainer outputs an array shape of (samples, features, classes) for standard multiclass models
+        shap_values_matrix = active_explainer.shap_values(query_features)
         
-        # Handle index tracking dimensional profiles safely for multi-output lists
-        if shap_array.ndim == 3:
-            # Slices user row 0, pulls features, grabs true presence likelihood mapping columns
-            live_values = shap_array[0, :, final_hard_index]
-        else:
-            live_values = shap_array[0, :, final_hard_index]
-            
-        # Hardcode the baseline expected value to 0.25 to prevent shifting errors
-        fixed_base_expected_value = 0.25
+        # Slice index 0 for the single row matrix vector, and target the active predicted class dimension column
+        live_values = shap_values_matrix[0, :, final_hard_index]
+        base_value = active_explainer.expected_value[final_hard_index]
         
-        # Reconstruct the exact SHAP Explanation object structure from your notebook cells
+        # Reconstruct the authenticated SHAP Explanation object container matching your notebook precisely
         shap_explanation_live = shap.Explanation(
             values=live_values,
-            base_values=fixed_base_expected_value,
+            base_values=base_value,
             data=query_features.iloc[0],
             feature_names=query_features.columns
         )
@@ -157,13 +150,13 @@ if 'loaded_model' in locals():
         # Disable LaTeX string layout parsing warnings to prevent graph canvas generation failures
         plt.rcParams['text.usetex'] = False
         
-        # Render plot canvas onto your Streamlit grid layout interface frames
+        # Capture plot canvas inside a native Matplotlib figure framework to force elegant layout width profiles
         fig, ax = plt.subplots(figsize=(10, 4))
         shap.plots.waterfall(shap_explanation_live, show=False)
         plt.tight_layout()
         
         # Position chart comfortably in the center column
-        col1, col2, col3 = st.columns(3)
+        col1, col2, col3 = st.columns([1.5, 5, 1.5])
         with col2:
             st.pyplot(fig)
             
