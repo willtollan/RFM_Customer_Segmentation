@@ -312,26 +312,21 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         prediction_proba = rf_estimator.predict_proba(query_features)
         
         # --- FIXED: ACCURATE MULTI-OUTPUT LIST UNPACKING & NORMALIZATION ---
-        # This checks if scikit-learn returned a list of arrays (Multi-Output shape structure)
         if isinstance(prediction_proba, list) and len(prediction_proba) == 4:
             extracted_probs = []
             for cluster_output in prediction_proba:
-                # cluster_output shape is (1, 2) -> [[prob_absence, prob_presence]]
-                # We squeeze the array and extract index 1 (the true probability of customer presence)
                 prob_presence = float(np.asarray(cluster_output).flatten()[1])
                 extracted_probs.append(prob_presence)
             raw_scores = np.array(extracted_probs)
         else:
-            # Standard single-target multi-class 1D matrix layout fallback array
             raw_scores = np.asarray(prediction_proba).flatten()
             
-        # Proportional Scaling Normalization: Forces all 4 class metrics to sum to exactly 1.0 (100%)
-        # This eliminates the duplicate 100% blocks and balances your dashboard metrics smoothly
+        # Proportional Scaling Normalization: Forces all 4 class metrics to sum to exactly 100%
         total_score_sum = float(np.sum(raw_scores))
         if total_score_sum > 0:
             normalized_percentages = (raw_scores / total_score_sum) * 100.0
         else:
-            normalized_percentages = np.array([25.0, 25.0, 25.0, 25.0]) # Uniform fallback
+            normalized_percentages = np.array([25.0, 25.0, 25.0, 25.0])
             
         # Build DataFrame directly using the forced 100.00% maximum probability vector row
         df_prediction_proba = pd.DataFrame([normalized_percentages])
@@ -356,8 +351,6 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         # --- Display Hard Prediction Outcome Banner ---
         st.subheader('Predicted Customer Segment')
         cluster_names = np.array(['Retain (Cluster 0)', 'Reward (Cluster 1)', 'Nurture (Cluster 2)', 'Re-Engage (Cluster 3)'])
-        
-        # Safely capture the correct point classification assignment index matching the highest percentage
         final_hard_index = int(np.argmax(normalized_percentages))
         st.success(f"🎯 Assigned Group: **{cluster_names[final_hard_index]}**")
         
@@ -367,13 +360,28 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         st.subheader('🧬 Feature Contribution Explanation (SHAP Waterfall)')
         st.write('This waterfall plot shows how much each input feature pushed the model toward this specific group assignment:')
         
-        # Compute live SHAP values specifically for the active user input row
+        # Compute live raw SHAP base values from your cached resource explainer object
         shap_values_live = explainer(query_features)
         
-        # Extract SHAP array elements specifically for the predicted target index class
+        # --- FIXED: SCALE SHAP MATRIX VALUES PROPORTIONALLY TO ALIGN F(X) ---
+        # Instead of feeding raw unscaled data structures, we extract the base ratio vector fields
+        # and scale the margins dynamically to align with our 100% data table percentages.
+        raw_feature_effects = shap_values_live.values[0, :, final_hard_index]
+        raw_base_value = explainer.expected_value[final_hard_index]
+        
+        # Calculate the mathematical multiplier ratio offset
+        raw_total_inference = raw_base_value + np.sum(raw_feature_effects)
+        scale_multiplier = (normalized_percentages[final_hard_index] / raw_total_inference) if raw_total_inference != 0 else 1.0
+        
+        # Apply the scaling alignment factor to the drawn canvas parameters
+        aligned_feature_effects = raw_feature_effects * scale_multiplier
+        aligned_f_x_output = normalized_percentages[final_hard_index]
+        aligned_base_value = raw_base_value * scale_multiplier
+        
+        # Reconstruct the final validated SHAP explanation plot object wrapper 
         shap_explanation_live = shap.Explanation(
-            values=shap_values_live.values[0, :, final_hard_index],
-            base_values=explainer.expected_value[final_hard_index],
+            values=aligned_feature_effects,
+            base_values=aligned_base_value,
             data=query_features.iloc[0],
             feature_names=query_features.columns
         )
@@ -393,5 +401,6 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
+
 
 
