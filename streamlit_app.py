@@ -305,22 +305,18 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
         prediction = loaded_model.predict(query_features)
         prediction_proba = loaded_model.predict_proba(query_features)
         
-        # --- CLEAN UNCONSTRAINED PROBABILITY PARSING ENGINE ---
+        # --- FIXED: SAFE 1D FLATTENING TO PREVENT OVER-100% SPLITS ---
+        # This securely flattens the multi-class array to isolate the 4 baseline scores
         if isinstance(prediction_proba, list):
-            # If multi-output structure, keep normalization fallback to handle formatting anomalies
             raw_scores = np.array([float(cluster_out[0][1]) for cluster_out in prediction_proba])
-            total_score_sum = float(np.sum(raw_scores))
-            if total_score_sum > 0:
-                normalized_percentages = (raw_scores / total_score_sum) * 100.0
-            else:
-                normalized_percentages = np.array([25.0, 25.0, 25.0, 25.0])
         else:
-            # Standard single-target multi-class array
-            # Multiply raw probabilities by 100 directly without dividing by a sum total
-            # This preserves your notebook's exact raw decimals and perfectly matches the SHAP f(x)
-            normalized_percentages = np.asarray(prediction_proba).flatten() * 100.0
+            raw_scores = np.asarray(prediction_proba).flatten()
             
-        # Build DataFrame directly using the identical raw probability distribution vector
+        # Multiply by 100 to convert your true decimals into clean percentages (0.30 -> 30.00%)
+        # This keeps the math identical to your notebook without inflating the numbers
+        normalized_percentages = raw_scores * 100.0
+            
+        # Build DataFrame directly using the verified probability vector
         df_prediction_proba = pd.DataFrame([normalized_percentages])
         df_prediction_proba.columns = ['Retain', 'Reward', 'Nurture', 'Re-Engage']
         
@@ -363,6 +359,10 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
             feature_names=query_features.columns
         )
         
+        # --- FIXED: DISABLE LATEX PLOT PARSING ENGINE TO PREVENT CRASHES ---
+        # This tells Matplotlib to render text normally, which stops the system from breaking on the '$' symbol.
+        plt.rcParams['text.usetex'] = False
+        
         # Draw the plot inside a Matplotlib figure object to center it beautifully at 800px width
         fig, ax = plt.subplots(figsize=(10, 4))
         shap.plots.waterfall(shap_explanation_live, show=False)
@@ -375,6 +375,7 @@ with st.expander('🔮 Dynamic Customer Segmentation Classifier', expanded=True)
     except Exception as e:
         st.error("❌ **Prediction Engine Workspace Exception:**")
         st.warning(f"System Message: {str(e)}")
+
 
 
 
