@@ -19,39 +19,31 @@ LABELS = {
 # 2. Cached Pipeline: Load pre-trained model & anchor SHAP with background data
 @st.cache_resource
 def load_production_assets():
-    # Load your pre-trained model pipeline directly from the 'models/' folder
+    # Load your existing pre-trained model from the 'models/' folder
     with open("models/random_forest_model.pkl", "rb") as f:
-        loaded_pipeline = pickle.load(f)
-    
-    # FIX: Extract the actual RandomForestClassifier from your pipeline steps
-    # This matches your notebook's named_steps['clf'] syntax and restores predict_proba
-    rf_clf = loaded_pipeline.named_steps['clf']
+        rf_clf = pickle.load(f)
         
     # Load raw data to extract the exact background split for SHAP
     df = pd.read_csv("data/preprocessed_labelled_data.csv")
     X = df[['MonetaryValue', 'Frequency', 'Recency']]
     y = df['Cluster']
     
-    # Recreate the exact train split to grab the background distribution rules
+    # Recreate the train split to grab the background data distribution
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, shuffle=True, random_state=42, stratify=y
     )
     
-    # FIX: Wrap the extracted classifier's predict_proba function.
-    # This bypasses the Python 3.14/scikit-learn internal structure check entirely.
-    explainer = shap.explainers.Permutation(rf_clf.predict_proba, X_train)
+    # Initialize the SHAP explainer anchored on X_train to preserve true class imbalance
+    explainer = shap.TreeExplainer(rf_clf, data=X_train)
     
     return rf_clf, explainer
 
-# Trigger loading sequences or gracefully stop on path error
+# Trigger loading sequences or gracefully stop on error
 with st.spinner("🔄 Loading pre-trained model and syncing SHAP baseline distributions..."):
     try:
         rf_clf, explainer = load_production_assets()
     except FileNotFoundError as e:
-        st.error(f"⚠️ Configuration error: Verify your files are in the right folders on GitHub. Missing: {e.filename}")
-        st.stop()
-    except KeyError:
-        st.error("⚠️ Pipeline structural error: Could not find a step named 'clf' inside your model file.")
+        st.error(f"⚠️ Configuration error: Verify that your dataset exists in 'data/' and your pre-trained model file exists in 'models/'. Missing: {e.filename}")
         st.stop()
 
 # 3. Sidebar Input Elements for Features
@@ -79,7 +71,7 @@ recency = st.sidebar.slider(
     step=1
 )
 
-# Convert active user settings into a single-row DataFrame matching the model features
+# Convert active user configuration settings into a operational single-row Dataframe
 user_input_df = pd.DataFrame([{
     'MonetaryValue': monetary_value,
     'Frequency': frequency,
@@ -114,7 +106,7 @@ with col2:
 st.write("---")
 st.subheader(f"🔍 SHAP Waterfall Explanation for Cluster: {predicted_label}")
 
-# Execute calculations against current user inputs using call syntax
+# Execute calculations against current user coordinates
 shap_output = explainer(user_input_df)
 
 fig, ax = plt.subplots(figsize=(8, 4.5))
