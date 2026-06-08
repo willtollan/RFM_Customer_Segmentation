@@ -1,9 +1,9 @@
 import streamlit as st
 import pandas as pd
+import pickle
 import shap
 import matplotlib.pyplot as plt
 from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
 
 # 1. Page Configuration
 st.set_page_config(page_title="Customer Cluster Explainer", layout="centered")
@@ -16,36 +16,34 @@ LABELS = {
     3: 'RE-ENGAGE'
 }
 
-# 2. Cached Training Pipeline (Runs once on app startup)
+# 2. Cached Pipeline: Load pre-trained model & anchor SHAP with background data
 @st.cache_resource
-def train_and_initialize_explainer():
-    # Load raw data from your data/ folder
+def load_production_assets():
+    # Load your existing pre-trained model from the 'models/' folder
+    with open("models/random_forest_model.pkl", "rb") as f:
+        rf_clf = pickle.load(f)
+        
+    # Load raw data to extract the exact background split for SHAP
     df = pd.read_csv("data/preprocessed_labelled_data.csv")
-    
     X = df[['MonetaryValue', 'Frequency', 'Recency']]
     y = df['Cluster']
     
-    # Train/Test Split (exactly as configured in your original training script)
+    # Recreate the train split to grab the background data distribution
     X_train, X_test, y_train, y_test = train_test_split(
         X, y, test_size=0.2, shuffle=True, random_state=42, stratify=y
     )
     
-    # Train the Random Forest
-    rf_clf = RandomForestClassifier(n_estimators=100, random_state=42)
-    rf_clf.fit(X_train, y_train)
-    
-    # FIX: Explicitly pass X_train here to calculate empirical data distribution means.
-    # This prevents the baseline from defaulting to an unweighted 0.25.
+    # Initialize the SHAP explainer anchored on X_train to preserve true class imbalance
     explainer = shap.TreeExplainer(rf_clf, data=X_train)
     
     return rf_clf, explainer
 
-# Trigger training or pull from cache
-with st.spinner("🔄 Training Random Forest and initializing SHAP explainer..."):
+# Trigger loading sequences or gracefully stop on error
+with st.spinner("🔄 Loading pre-trained model and syncing SHAP baseline distributions..."):
     try:
-        rf_clf, explainer = train_and_initialize_explainer()
-    except FileNotFoundError:
-        st.error("⚠️ Data file not found! Please upload 'preprocessed_labelled_data.csv' into your 'data/' folder on GitHub.")
+        rf_clf, explainer = load_production_assets()
+    except FileNotFoundError as e:
+        st.error(f"⚠️ Configuration error: Verify that your dataset exists in 'data/' and your pre-trained model file exists in 'models/'. Missing: {e.filename}")
         st.stop()
 
 # 3. Sidebar Input Elements for Features
@@ -73,7 +71,7 @@ recency = st.sidebar.slider(
     step=1
 )
 
-# Convert inputs into a single-row DataFrame matching the model features
+# Convert active user configuration settings into a operational single-row Dataframe
 user_input_df = pd.DataFrame([{
     'MonetaryValue': monetary_value,
     'Frequency': frequency,
@@ -108,13 +106,12 @@ with col2:
 st.write("---")
 st.subheader(f"🔍 SHAP Waterfall Explanation for Cluster: {predicted_label}")
 
-# Compute SHAP values using the modern __call__ syntax for the user's specific inputs
+# Execute calculations against current user coordinates
 shap_output = explainer(user_input_df)
 
 fig, ax = plt.subplots(figsize=(8, 4.5))
 
-# FIX: Plot the waterfall diagram using correct structural array slicing from shap_output.
-# base_values is now extracted directly from the explanation object (reflecting the class imbalance)
+# Slices out exact classification weights mapping back to actual data base values
 shap.plots.waterfall(
     shap.Explanation(
         values=shap_output.values[0, :, hard_prediction],
@@ -127,4 +124,3 @@ shap.plots.waterfall(
 
 plt.tight_layout()
 st.pyplot(fig)
-
