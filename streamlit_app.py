@@ -66,22 +66,6 @@ frequency_input = st.sidebar.number_input(
     step=1.0
 )
 
-monetary_input = st.sidebar.number_input(
-    "Monetary Value ($)", 
-    min_value=float(X_test['MonetaryValue'].min()), 
-    max_value=float(X_test['MonetaryValue'].max()), 
-    value=float(X_test['MonetaryValue'].median()),
-    step=10.0
-)
-
-frequency_input = st.sidebar.number_input(
-    "Frequency (Visits)", 
-    min_value=float(X_test['Frequency'].min()), 
-    max_value=float(X_test['Frequency'].max()), 
-    value=float(X_test['Frequency'].median()),
-    step=1.0
-)
-
 recency_input = st.sidebar.number_input(
     "Recency (Days)", 
     min_value=float(X_test['Recency'].min()), 
@@ -101,7 +85,7 @@ custom_df = pd.DataFrame([custom_features])[X_test.columns].astype(X_test.dtypes
 
 # 2. Compute model predictions and confidence scores sequentially
 raw_prediction = rf_clf.predict(custom_df)
-predicted_class_int = int(raw_prediction[0])
+predicted_class_int = int(raw_prediction)
 
 raw_probabilities = rf_clf.predict_proba(custom_df)
 probabilities_list = list(raw_probabilities[0])
