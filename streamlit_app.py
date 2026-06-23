@@ -59,27 +59,29 @@ global_shap_values = compute_cached_global_shap(explainer, X_test)
 # 3. Sidebar Input Elements for Features
 st.sidebar.header("📥 Input Customer Features")
 
-monetary_value = st.sidebar.number_input(
-    "Monetary Value ($)", 
-    min_value=0.0, 
-    max_value=50000.0, 
-    value=150.0, 
-    step=10.0
-)
-frequency = st.sidebar.slider(
-    "Frequency (Total Visits)", 
-    min_value=1, 
-    max_value=100, 
-    value=1, 
-    step=1
-)
-recency = st.sidebar.slider(
-    "Recency (Days Since Last Purchase)", 
-    min_value=0, 
-    max_value=365, 
-    value=110, 
-    step=1
-)
+# --- MONETARY VALUE SYNCHRONIZATION ---
+st.sidebar.markdown("**Monetary Value ($)**")
+# Note: min_value, max_value, and step must match exactly across paired widgets
+st.sidebar.number_input("Type Monetary Value:", min_value=0.0, max_value=50000.0, step=10.0, key="mv_sync", label_visibility="collapsed")
+monetary_value = st.sidebar.slider("Slide Monetary Value:", min_value=0.0, max_value=50000.0, step=10.0, key="mv_sync", label_visibility="collapsed")
+
+# --- FREQUENCY SYNCHRONIZATION ---
+st.sidebar.markdown("**Frequency (Total Visits)**")
+st.sidebar.number_input("Type Frequency:", min_value=1, max_value=100, step=1, key="freq_sync", label_visibility="collapsed")
+frequency = st.sidebar.slider("Slide Frequency:", min_value=1, max_value=100, step=1, key="freq_sync", label_visibility="collapsed")
+
+# --- RECENCY SYNCHRONIZATION ---
+st.sidebar.markdown("**Recency (Days Since Last Purchase)**")
+st.sidebar.number_input("Type Recency:", min_value=0, max_value=365, step=1, key="rec_sync", label_visibility="collapsed")
+recency = st.sidebar.slider("Slide Recency:", min_value=0, max_value=365, step=1, key="rec_sync", label_visibility="collapsed")
+
+# Pre-fill specific default scenario values directly into Streamlit's state engine if first load
+if "first_run_initialized" not in st.session_state:
+    st.session_state["mv_sync"] = 150.0
+    st.session_state["freq_sync"] = 1
+    st.session_state["rec_sync"] = 110
+    st.session_state["first_run_initialized"] = True
+    st.rerun()
 
 # Convert inputs into a single-row DataFrame matching the model features
 user_input_df = pd.DataFrame([{
@@ -149,5 +151,4 @@ with col_plot2:
     plt.title(f"Global Cohort Weight: {predicted_label}", fontsize=12, pad=10)
     plt.tight_layout()
     st.pyplot(fig_beeswarm, clear_figure=True)
-
 
