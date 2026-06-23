@@ -50,36 +50,72 @@ def compute_cached_global_shap(_explainer_engine, _test_df):
 # Pre-calculate full reference matrix for the macro-level view
 global_shap_values = compute_cached_global_shap(explainer, X_test)
 
+# --- STATE SYNCHRONIZATION INITIALIZATION ---
+# Set default initial values in session state if they do not exist
+if "mv_val" not in st.session_state:
+    st.session_state["mv_val"] = 150.0
+if "freq_val" not in st.session_state:
+    st.session_state["freq_val"] = 1
+if "rec_val" not in st.session_state:
+    st.session_state["rec_val"] = 110
+
+# Callback functions to bind sliders and input boxes together
+def sync_mv_num():
+    st.session_state["mv_val"] = st.session_state["mv_num"]
+def sync_mv_slide():
+    st.session_state["mv_val"] = st.session_state["mv_slide"]
+
+def sync_freq_num():
+    st.session_state["freq_val"] = st.session_state["freq_num"]
+def sync_freq_slide():
+    st.session_state["freq_val"] = st.session_state["freq_slide"]
+
+def sync_rec_num():
+    st.session_state["rec_val"] = st.session_state["rec_num"]
+def sync_rec_slide():
+    st.session_state["rec_val"] = st.session_state["rec_slide"]
+
 # 3. Sidebar Input Elements for Features
 st.sidebar.header("📥 Input Customer Features")
 
+# --- MONETARY VALUE (Accepts Decimals) ---
+st.sidebar.markdown("**Monetary Value ($)**")
 monetary_value = st.sidebar.number_input(
-    "Monetary Value ($)", 
-    min_value=0.0, 
-    max_value=50000.0, 
-    value=150.0, 
-    step=10.0
+    "Type Monetary Value:", min_value=0.0, max_value=50000.0, step=10.0, format="%.2f",
+    value=st.session_state["mv_val"], key="mv_num", on_change=sync_mv_num, label_visibility="collapsed"
 )
-frequency = st.sidebar.slider(
-    "Frequency (Total Visits)", 
-    min_value=1, 
-    max_value=100, 
-    value=1, 
-    step=1
+st.sidebar.slider(
+    "Slide Monetary Value:", min_value=0.0, max_value=50000.0, step=10.0, format="%.2f",
+    value=st.session_state["mv_val"], key="mv_slide", on_change=sync_mv_slide, label_visibility="collapsed"
 )
-recency = st.sidebar.slider(
-    "Recency (Days Since Last Purchase)", 
-    min_value=0, 
-    max_value=365, 
-    value=110, 
-    step=1
+
+# --- FREQUENCY (Strictly Integers) ---
+st.sidebar.markdown("**Frequency (Total Visits)**")
+frequency = st.sidebar.number_input(
+    "Type Frequency:", min_value=1, max_value=100, step=1,
+    value=st.session_state["freq_val"], key="freq_num", on_change=sync_freq_num, label_visibility="collapsed"
+)
+st.sidebar.slider(
+    "Slide Frequency:", min_value=1, max_value=100, step=1,
+    value=st.session_state["freq_val"], key="freq_slide", on_change=sync_freq_slide, label_visibility="collapsed"
+)
+
+# --- RECENCY (Strictly Integers) ---
+st.sidebar.markdown("**Recency (Days Since Last Purchase)**")
+recency = st.sidebar.number_input(
+    "Type Recency:", min_value=0, max_value=365, step=1,
+    value=st.session_state["rec_val"], key="rec_num", on_change=sync_rec_num, label_visibility="collapsed"
+)
+st.sidebar.slider(
+    "Slide Recency:", min_value=0, max_value=365, step=1,
+    value=st.session_state["rec_val"], key="rec_slide", on_change=sync_rec_slide, label_visibility="collapsed"
 )
 
 # Convert inputs into a single-row DataFrame matching the model features
 user_input_df = pd.DataFrame([{
-    'MonetaryValue': monetary_value,
-    'Frequency': frequency,
-    'Recency': recency
+    'MonetaryValue': float(monetary_value),
+    'Frequency': int(frequency),
+    'Recency': int(recency)
 }])
 user_input_df = user_input_df[X_test.columns].astype(X_test.dtypes)
 
@@ -94,7 +130,7 @@ for class_idx in sorted(LABELS.keys()):
     class_fx_prob = float(class_base_value + class_shap_sum)
     all_classes_probabilities.append(class_fx_prob)
 
-# FIX: Define the prediction dynamically based on the highest probability in the f(x) space
+# Define the prediction dynamically based on the highest probability in the f(x) space
 hard_prediction = int(np.argmax(all_classes_probabilities))
 predicted_label = LABELS[hard_prediction]
 
@@ -174,8 +210,9 @@ with col_plot2:
     fig_beeswarm, ax_beeswarm = plt.subplots(figsize=(8, 4.5))
     shap.plots.beeswarm(class_global_explanation, max_display=3, show=False)
     plt.title(f"Global Cohort Weight: {predicted_label}", fontsize=12, pad=10)
-    plt.tight_layout()
+    st.tight_layout()
     st.pyplot(fig_beeswarm, clear_figure=True)
+
 
 
 
