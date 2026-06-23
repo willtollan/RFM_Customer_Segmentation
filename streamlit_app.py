@@ -80,15 +80,16 @@ user_input_df = pd.DataFrame([{
     'Frequency': frequency,
     'Recency': recency
 }])
+user_input_df = user_input_df[X_test.columns].astype(X_test.dtypes)
 
 # 4. Generate Predictions & Compute SHAP Values Upfront
 hard_prediction = int(rf_clf.predict(user_input_df)[0])
 predicted_label = LABELS[hard_prediction]
 
 # Compute SHAP values using the modern __call__ syntax for the user's specific inputs
-shap_output = explainer(user_input_df)
+shap_output = explainer(user_input_df, check_additivity=False)
 
-# Loop through all 4 classes to calculate the exact f(x) probability for each
+# UNIFIED JUPYTER LOGIC: Loop through all 4 classes to calculate the exact f(x) probability for each row
 all_classes_probabilities = []
 for class_idx in sorted(LABELS.keys()):
     class_base_value = shap_output.base_values[0, class_idx]
@@ -96,7 +97,10 @@ for class_idx in sorted(LABELS.keys()):
     class_fx_prob = float(class_base_value + class_shap_sum)
     all_classes_probabilities.append(class_fx_prob)
 
-# Create a clean data presentation frame
+# Set the active prediction base value for the waterfall plot
+base_value = shap_output.base_values[0, hard_prediction]
+
+# Create a clean data presentation frame using the SHAP-derived f(x) probabilities
 prob_df = pd.DataFrame({
     "Class ID": list(LABELS.keys()),
     "Cluster Cohort": list(LABELS.values()),
@@ -149,7 +153,7 @@ with col_plot1:
     shap.plots.waterfall(
         shap.Explanation(
             values=shap_output.values[0, :, hard_prediction],
-            base_values=shap_output.base_values[0, hard_prediction], 
+            base_values=base_value, 
             data=user_input_df.iloc[0],
             feature_names=user_input_df.columns
         ),
@@ -171,6 +175,7 @@ with col_plot2:
     plt.title(f"Global Cohort Weight: {predicted_label}", fontsize=12, pad=10)
     plt.tight_layout()
     st.pyplot(fig_beeswarm, clear_figure=True)
+
 
 
 
