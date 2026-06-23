@@ -210,8 +210,9 @@ with col_plot2:
     fig_beeswarm, ax_beeswarm = plt.subplots(figsize=(8, 4.5))
     shap.plots.beeswarm(class_global_explanation, max_display=3, show=False)
     plt.title(f"Global Cohort Weight: {predicted_label}", fontsize=12, pad=10)
-    st.tight_layout()
+    plt.tight_layout()  # <-- FIXED: Changed from st.tight_layout() to plt.tight_layout()
     st.pyplot(fig_beeswarm, clear_figure=True)
+
 
 
 
