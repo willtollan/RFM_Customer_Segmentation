@@ -56,38 +56,72 @@ def compute_cached_global_shap(_explainer_engine, _test_df):
 # Pre-calculate full reference matrix for the macro-level view
 global_shap_values = compute_cached_global_shap(explainer, X_test)
 
+# --- STATE SYNCHRONIZATION INITIALIZATION ---
+# Set up initial starting values on application first run
+if "mv_val" not in st.session_state:
+    st.session_state["mv_val"] = 150.0
+if "freq_val" not in st.session_state:
+    st.session_state["freq_val"] = 1
+if "rec_val" not in st.session_state:
+    st.session_state["rec_val"] = 110
+
+# Callback Functions for Synchronization
+def update_mv_num():
+    st.session_state["mv_val"] = st.session_state["mv_num"]
+def update_mv_slide():
+    st.session_state["mv_val"] = st.session_state["mv_slide"]
+
+def update_freq_num():
+    st.session_state["freq_val"] = st.session_state["freq_num"]
+def update_freq_slide():
+    st.session_state["freq_val"] = st.session_state["freq_slide"]
+
+def update_rec_num():
+    st.session_state["rec_val"] = st.session_state["rec_num"]
+def update_rec_slide():
+    st.session_state["rec_val"] = st.session_state["rec_slide"]
+
 # 3. Sidebar Input Elements for Features
 st.sidebar.header("📥 Input Customer Features")
 
-# --- MONETARY VALUE SYNCHRONIZATION ---
+# --- MONETARY VALUE WIDGETS ---
 st.sidebar.markdown("**Monetary Value ($)**")
-# Note: min_value, max_value, and step must match exactly across paired widgets
-st.sidebar.number_input("Type Monetary Value:", min_value=0.0, max_value=50000.0, step=10.0, key="mv_sync", label_visibility="collapsed")
-monetary_value = st.sidebar.slider("Slide Monetary Value:", min_value=0.0, max_value=50000.0, step=10.0, key="mv_sync", label_visibility="collapsed")
+monetary_value = st.sidebar.number_input(
+    "Type Monetary Value:", min_value=0.0, max_value=50000.0, step=10.0,
+    value=st.session_state["mv_val"], key="mv_num", on_change=update_mv_num, label_visibility="collapsed"
+)
+st.sidebar.slider(
+    "Slide Monetary Value:", min_value=0.0, max_value=50000.0, step=10.0,
+    value=st.session_state["mv_val"], key="mv_slide", on_change=update_mv_slide, label_visibility="collapsed"
+)
 
-# --- FREQUENCY SYNCHRONIZATION ---
+# --- FREQUENCY WIDGETS ---
 st.sidebar.markdown("**Frequency (Total Visits)**")
-st.sidebar.number_input("Type Frequency:", min_value=1, max_value=100, step=1, key="freq_sync", label_visibility="collapsed")
-frequency = st.sidebar.slider("Slide Frequency:", min_value=1, max_value=100, step=1, key="freq_sync", label_visibility="collapsed")
+frequency = st.sidebar.number_input(
+    "Type Frequency:", min_value=1, max_value=100, step=1,
+    value=st.session_state["freq_val"], key="freq_num", on_change=update_freq_num, label_visibility="collapsed"
+)
+st.sidebar.slider(
+    "Slide Frequency:", min_value=1, max_value=100, step=1,
+    value=st.session_state["freq_val"], key="freq_slide", on_change=update_freq_slide, label_visibility="collapsed"
+)
 
-# --- RECENCY SYNCHRONIZATION ---
+# --- RECENCY WIDGETS ---
 st.sidebar.markdown("**Recency (Days Since Last Purchase)**")
-st.sidebar.number_input("Type Recency:", min_value=0, max_value=365, step=1, key="rec_sync", label_visibility="collapsed")
-recency = st.sidebar.slider("Slide Recency:", min_value=0, max_value=365, step=1, key="rec_sync", label_visibility="collapsed")
-
-# Pre-fill specific default scenario values directly into Streamlit's state engine if first load
-if "first_run_initialized" not in st.session_state:
-    st.session_state["mv_sync"] = 150.0
-    st.session_state["freq_sync"] = 1
-    st.session_state["rec_sync"] = 110
-    st.session_state["first_run_initialized"] = True
-    st.rerun()
+recency = st.sidebar.number_input(
+    "Type Recency:", min_value=0, max_value=365, step=1,
+    value=st.session_state["rec_val"], key="rec_num", on_change=update_rec_num, label_visibility="collapsed"
+)
+st.sidebar.slider(
+    "Slide Recency:", min_value=0, max_value=365, step=1,
+    value=st.session_state["rec_val"], key="rec_slide", on_change=update_rec_slide, label_visibility="collapsed"
+)
 
 # Convert inputs into a single-row DataFrame matching the model features
 user_input_df = pd.DataFrame([{
-    'MonetaryValue': monetary_value,
-    'Frequency': frequency,
-    'Recency': recency
+    'MonetaryValue': float(monetary_value),
+    'Frequency': int(frequency),
+    'Recency': int(recency)
 }])
 
 # 4. Generate Predictions & Compute SHAP Values Upfront
@@ -111,7 +145,6 @@ with col_m1:
 
 with col_m2:
     st.subheader("📊 Model Confidence")
-    # Displays the exact f(x) probability directly as a metric callout card
     st.metric(label="Prediction Probability f(x)", value=f"{fx_probability * 100:.2f}%")
 
 st.write("---")
@@ -125,7 +158,6 @@ with col_plot1:
     
     fig_waterfall, ax_waterfall = plt.subplots(figsize=(8, 4.5))
     
-    # Plot the waterfall diagram using correct structural array slicing from shap_output.
     shap.plots.waterfall(
         shap.Explanation(
             values=shap_output.values[0, :, hard_prediction],
@@ -143,7 +175,6 @@ with col_plot2:
     st.subheader("🌎 Historical Macro View (Global Beeswarm Plot)")
     st.caption(f"Reviewing baseline feature weight trends for the **{predicted_label}** cohort across the entire test set.")
     
-    # Extract the pre-calculated 2D slice for the currently active predicted class segment
     class_global_explanation = global_shap_values[:, :, hard_prediction]
     
     fig_beeswarm, ax_beeswarm = plt.subplots(figsize=(8, 4.5))
@@ -151,4 +182,5 @@ with col_plot2:
     plt.title(f"Global Cohort Weight: {predicted_label}", fontsize=12, pad=10)
     plt.tight_layout()
     st.pyplot(fig_beeswarm, clear_figure=True)
+
 
