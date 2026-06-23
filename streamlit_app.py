@@ -3,6 +3,7 @@ import pandas as pd
 import joblib
 import shap
 import matplotlib.pyplot as plt
+import numpy as np
 
 # 1. Page Configuration
 st.set_page_config(page_title="Customer Cluster Explainer", layout="wide")
@@ -82,20 +83,20 @@ user_input_df = pd.DataFrame([{
 }])
 user_input_df = user_input_df[X_test.columns].astype(X_test.dtypes)
 
-# 4. Generate Predictions & Compute SHAP Values Upfront
-hard_prediction = int(rf_clf.predict(user_input_df)[0])
-predicted_label = LABELS[hard_prediction]
-
-# Compute SHAP values using the modern __call__ syntax for the user's specific inputs
+# 4. Generate SHAP Values Upfront
 shap_output = explainer(user_input_df, check_additivity=False)
 
-# UNIFIED JUPYTER LOGIC: Loop through all 4 classes to calculate the exact f(x) probability for each row
+# Calculate the exact f(x) probability for all 4 classes using SHAP margin outputs
 all_classes_probabilities = []
 for class_idx in sorted(LABELS.keys()):
     class_base_value = shap_output.base_values[0, class_idx]
     class_shap_sum = shap_output.values[0, :, class_idx].sum()
     class_fx_prob = float(class_base_value + class_shap_sum)
     all_classes_probabilities.append(class_fx_prob)
+
+# FIX: Define the prediction dynamically based on the highest probability in the f(x) space
+hard_prediction = int(np.argmax(all_classes_probabilities))
+predicted_label = LABELS[hard_prediction]
 
 # Set the active prediction base value for the waterfall plot
 base_value = shap_output.base_values[0, hard_prediction]
@@ -175,6 +176,7 @@ with col_plot2:
     plt.title(f"Global Cohort Weight: {predicted_label}", fontsize=12, pad=10)
     plt.tight_layout()
     st.pyplot(fig_beeswarm, clear_figure=True)
+
 
 
 
