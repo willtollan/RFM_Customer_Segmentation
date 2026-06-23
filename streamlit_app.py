@@ -1,9 +1,8 @@
 import streamlit as st
 import pandas as pd
+import joblib
 import shap
 import matplotlib.pyplot as plt
-from sklearn.model_selection import train_test_split
-from sklearn.ensemble import RandomForestClassifier
 
 # 1. Page Configuration
 st.set_page_config(page_title="Customer Cluster Explainer", layout="wide")
@@ -16,37 +15,31 @@ LABELS = {
     3: 'RE-ENGAGE'
 }
 
-# 2. Cached Training Pipeline (Runs once on app startup)
-@st.cache_resource
-def train_and_initialize_explainer():
-    # Load raw data from your data/ folder
-    df = pd.read_csv("data/preprocessed_labelled_data.csv")
-    
-    X = df[['MonetaryValue', 'Frequency', 'Recency']]
-    y = df['Cluster']
-    
-    # Train/Test Split (exactly as configured in your original training script)
-    X_train, X_test, y_train, y_test = train_test_split(
-        X, y, test_size=0.2, shuffle=True, random_state=42, stratify=y
-    )
-    
-    # Train the Random Forest
-    rf_clf = RandomForestClassifier(n_estimators=100, random_state=42)
-    rf_clf.fit(X_train, y_train)
-    
-    # FIX: Explicitly pass X_train here to calculate empirical data distribution means.
-    # This prevents the baseline from defaulting to an unweighted 0.25.
-    explainer = shap.TreeExplainer(rf_clf, data=X_train)
-    
-    return rf_clf, explainer, X_test
+# 2. Cached Data & Pretrained Model Loading
+@st.cache_data
+def load_datasets():
+    # Reads from the "data" folder in your repository
+    X_train = pd.read_csv("data/X_train.csv")
+    X_test = pd.read_csv("data/X_test.csv")
+    return X_train, X_test
 
-# Trigger training or pull from cache
-with st.spinner("🔄 Training Random Forest and initializing SHAP explainer..."):
-    try:
-        rf_clf, explainer, X_test = train_and_initialize_explainer()
-    except FileNotFoundError:
-        st.error("⚠️ Data file not found! Please upload 'preprocessed_labelled_data.csv' into your 'data/' folder on GitHub.")
-        st.stop()
+@st.cache_resource
+def load_model_and_explainer(X_train):
+    # Reads your custom pretrained model from the "models" folder
+    loaded_model = joblib.load("models/random_forest_model.pkl")
+    rf_clf = loaded_model.named_steps['clf']
+    
+    # Initialize explainer using background training data for empirical expected values
+    explainer = shap.TreeExplainer(rf_clf, data=X_train)
+    return rf_clf, explainer
+
+# Load production components
+try:
+    X_train, X_test = load_datasets()
+    rf_clf, explainer = load_model_and_explainer(X_train)
+except Exception as e:
+    st.error(f"⚠️ Error loading production files. Check repository paths: {e}")
+    st.stop()
 
 # --- OPTIMIZED CACHED GLOBAL SHAP ENGINE ---
 @st.cache_data
@@ -149,5 +142,6 @@ with col_plot2:
     plt.title(f"Global Cohort Weight: {predicted_label}", fontsize=12, pad=10)
     plt.tight_layout()
     st.pyplot(fig_beeswarm, clear_figure=True)
+
 
 
