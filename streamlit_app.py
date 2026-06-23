@@ -56,72 +56,36 @@ def compute_cached_global_shap(_explainer_engine, _test_df):
 # Pre-calculate full reference matrix for the macro-level view
 global_shap_values = compute_cached_global_shap(explainer, X_test)
 
-# --- STATE SYNCHRONIZATION INITIALIZATION ---
-# Set up initial starting values on application first run
-if "mv_val" not in st.session_state:
-    st.session_state["mv_val"] = 150.0
-if "freq_val" not in st.session_state:
-    st.session_state["freq_val"] = 1
-if "rec_val" not in st.session_state:
-    st.session_state["rec_val"] = 110
-
-# Callback Functions for Synchronization
-def update_mv_num():
-    st.session_state["mv_val"] = st.session_state["mv_num"]
-def update_mv_slide():
-    st.session_state["mv_val"] = st.session_state["mv_slide"]
-
-def update_freq_num():
-    st.session_state["freq_val"] = st.session_state["freq_num"]
-def update_freq_slide():
-    st.session_state["freq_val"] = st.session_state["freq_slide"]
-
-def update_rec_num():
-    st.session_state["rec_val"] = st.session_state["rec_num"]
-def update_rec_slide():
-    st.session_state["rec_val"] = st.session_state["rec_slide"]
-
 # 3. Sidebar Input Elements for Features
 st.sidebar.header("📥 Input Customer Features")
 
-# --- MONETARY VALUE WIDGETS ---
-st.sidebar.markdown("**Monetary Value ($)**")
 monetary_value = st.sidebar.number_input(
-    "Type Monetary Value:", min_value=0.0, max_value=50000.0, step=10.0,
-    value=st.session_state["mv_val"], key="mv_num", on_change=update_mv_num, label_visibility="collapsed"
+    "Monetary Value ($)", 
+    min_value=0.0, 
+    max_value=50000.0, 
+    value=150.0, 
+    step=10.0
 )
-st.sidebar.slider(
-    "Slide Monetary Value:", min_value=0.0, max_value=50000.0, step=10.0,
-    value=st.session_state["mv_val"], key="mv_slide", on_change=update_mv_slide, label_visibility="collapsed"
+frequency = st.sidebar.slider(
+    "Frequency (Total Visits)", 
+    min_value=1, 
+    max_value=100, 
+    value=1, 
+    step=1
 )
-
-# --- FREQUENCY WIDGETS ---
-st.sidebar.markdown("**Frequency (Total Visits)**")
-frequency = st.sidebar.number_input(
-    "Type Frequency:", min_value=1, max_value=100, step=1,
-    value=st.session_state["freq_val"], key="freq_num", on_change=update_freq_num, label_visibility="collapsed"
-)
-st.sidebar.slider(
-    "Slide Frequency:", min_value=1, max_value=100, step=1,
-    value=st.session_state["freq_val"], key="freq_slide", on_change=update_freq_slide, label_visibility="collapsed"
-)
-
-# --- RECENCY WIDGETS ---
-st.sidebar.markdown("**Recency (Days Since Last Purchase)**")
-recency = st.sidebar.number_input(
-    "Type Recency:", min_value=0, max_value=365, step=1,
-    value=st.session_state["rec_val"], key="rec_num", on_change=update_rec_num, label_visibility="collapsed"
-)
-st.sidebar.slider(
-    "Slide Recency:", min_value=0, max_value=365, step=1,
-    value=st.session_state["rec_val"], key="rec_slide", on_change=update_rec_slide, label_visibility="collapsed"
+recency = st.sidebar.slider(
+    "Recency (Days Since Last Purchase)", 
+    min_value=0, 
+    max_value=365, 
+    value=110, 
+    step=1
 )
 
 # Convert inputs into a single-row DataFrame matching the model features
 user_input_df = pd.DataFrame([{
-    'MonetaryValue': float(monetary_value),
-    'Frequency': int(frequency),
-    'Recency': int(recency)
+    'MonetaryValue': monetary_value,
+    'Frequency': frequency,
+    'Recency': recency
 }])
 
 # 4. Generate Predictions & Compute SHAP Values Upfront
@@ -145,6 +109,7 @@ with col_m1:
 
 with col_m2:
     st.subheader("📊 Model Confidence")
+    # Displays the exact f(x) probability directly as a metric callout card
     st.metric(label="Prediction Probability f(x)", value=f"{fx_probability * 100:.2f}%")
 
 st.write("---")
@@ -158,6 +123,7 @@ with col_plot1:
     
     fig_waterfall, ax_waterfall = plt.subplots(figsize=(8, 4.5))
     
+    # Plot the waterfall diagram using correct structural array slicing from shap_output.
     shap.plots.waterfall(
         shap.Explanation(
             values=shap_output.values[0, :, hard_prediction],
@@ -175,6 +141,7 @@ with col_plot2:
     st.subheader("🌎 Historical Macro View (Global Beeswarm Plot)")
     st.caption(f"Reviewing baseline feature weight trends for the **{predicted_label}** cohort across the entire test set.")
     
+    # Extract the pre-calculated 2D slice for the currently active predicted class segment
     class_global_explanation = global_shap_values[:, :, hard_prediction]
     
     fig_beeswarm, ax_beeswarm = plt.subplots(figsize=(8, 4.5))
