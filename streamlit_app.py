@@ -83,18 +83,18 @@ custom_features = {
 }
 custom_df = pd.DataFrame([custom_features])[X_test.columns].astype(X_test.dtypes)
 
-# 2. Compute model predictions and confidence scores sequentially
+# 2. Compute model predictions and confidence scores sequentially (FIXED Array Indexing)
 raw_prediction = rf_clf.predict(custom_df)
-predicted_class_int = int(raw_prediction)
+predicted_class_int = int(raw_prediction[0])  # <-- Extract first element from array safely
 
 raw_probabilities = rf_clf.predict_proba(custom_df)
-probabilities_list = list(raw_probabilities[0])
+probabilities_list = list(raw_probabilities[0])  # <-- Extract the inner list from outer 2D array
 
 predicted_class_name = cluster_labels[predicted_class_int]
 predicted_class_prob = float(probabilities_list[predicted_class_int])
 
 # --- MAIN DASHBOARD LAYOUT ---
-col1, col2 = st.columns([1, 1])
+col1, col2 = st.columns()
 
 with col1:
     st.subheader("📊 Model Classification Metrics")
