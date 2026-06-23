@@ -82,28 +82,57 @@ user_input_df = pd.DataFrame([{
 }])
 
 # 4. Generate Predictions & Compute SHAP Values Upfront
-hard_prediction = rf_clf.predict(user_input_df)[0]
+hard_prediction = int(rf_clf.predict(user_input_df)[0])
 predicted_label = LABELS[hard_prediction]
 
 # Compute SHAP values using the modern __call__ syntax for the user's specific inputs
 shap_output = explainer(user_input_df)
 
-# Extract and sum SHAP components to calculate the exact f(x) probability for the predicted class
-base_value = shap_output.base_values[0, hard_prediction]
-shap_values_sum = shap_output.values[0, :, hard_prediction].sum()
-fx_probability = float(base_value + shap_values_sum)
+# Loop through all 4 classes to calculate the exact f(x) probability for each
+all_classes_probabilities = []
+for class_idx in sorted(LABELS.keys()):
+    class_base_value = shap_output.base_values[0, class_idx]
+    class_shap_sum = shap_output.values[0, :, class_idx].sum()
+    class_fx_prob = float(class_base_value + class_shap_sum)
+    all_classes_probabilities.append(class_fx_prob)
+
+# Create a clean data presentation frame
+prob_df = pd.DataFrame({
+    "Class ID": list(LABELS.keys()),
+    "Cluster Cohort": list(LABELS.values()),
+    "Probability f(x)": all_classes_probabilities
+})
+
+# Define a custom style function to highlight the active prediction row
+def highlight_predicted_row(row):
+    if row["Class ID"] == hard_prediction:
+        return ['background-color: #1e4620; color: #a3e635; font-weight: bold;'] * len(row)
+    return [''] * len(row)
+
+# Apply formatting styles (Percentage display + conditional row highlight)
+styled_prob_df = (
+    prob_df.style
+    .format({"Probability f(x)": "{:.2%}"})
+    .apply(highlight_predicted_row, axis=1)
+)
 
 # 5. Display Predictions Dashboard
 col_m1, col_m2 = st.columns(2)
 
 with col_m1:
-    st.subheader("🎯 Assignment")
-    st.metric(label="Predicted Cluster", value=predicted_label)
+    st.subheader("🎯 Primary Assignment")
+    st.write("")  # Visual spacer
+    st.metric(label="Assigned Cluster Cohort", value=predicted_label)
+    st.caption(f"The input values map this customer profile directly to **Cluster {hard_prediction}**.")
 
 with col_m2:
-    st.subheader("📊 Model Confidence")
-    # Displays the exact f(x) probability directly as a metric callout card
-    st.metric(label="Prediction Probability f(x)", value=f"{fx_probability * 100:.2f}%")
+    st.subheader("📊 Full Cohort Probability Breakdown")
+    # Render the styled probability matrix table directly
+    st.dataframe(
+        styled_prob_df,
+        hide_index=True,
+        use_container_width=True
+    )
 
 st.write("---")
 
@@ -120,7 +149,7 @@ with col_plot1:
     shap.plots.waterfall(
         shap.Explanation(
             values=shap_output.values[0, :, hard_prediction],
-            base_values=base_value, 
+            base_values=shap_output.base_values[0, hard_prediction], 
             data=user_input_df.iloc[0],
             feature_names=user_input_df.columns
         ),
@@ -142,6 +171,7 @@ with col_plot2:
     plt.title(f"Global Cohort Weight: {predicted_label}", fontsize=12, pad=10)
     plt.tight_layout()
     st.pyplot(fig_beeswarm, clear_figure=True)
+
 
 
 
