@@ -1,178 +1,130 @@
 import streamlit as st
-import numpy as np
 import pandas as pd
-import joblib
 import shap
 import matplotlib.pyplot as plt
+from sklearn.model_selection import train_test_split
+from sklearn.ensemble import RandomForestClassifier
 
-# Set page configuration to wide layout
-st.set_page_config(page_title="Customer Cluster Dashboard", layout="wide")
+# 1. Page Configuration
+st.set_page_config(page_title="Customer Cluster Explainer", layout="centered")
+st.title("🛍️ Customer Cluster Predictor & SHAP Explainer")
 
-# --- CACHED DATA & MODEL LOADING ---
-@st.cache_data
-def load_datasets():
-    # Reads from the "data" folder in your repository
-    X_train = pd.read_csv("data/X_train.csv")
-    X_test = pd.read_csv("data/X_test.csv")
-    return X_train, X_test
-
-@st.cache_resource
-def load_model_and_explainer(X_train):
-    # Reads from the "models" folder in your repository
-    loaded_model = joblib.load("models/random_forest_model.pkl")
-    rf_clf = loaded_model.named_steps['clf']
-    
-    # Initialize the explainer using background training data for empirical expected values
-    explainer = shap.TreeExplainer(rf_clf, data=X_train)
-    return rf_clf, explainer
-
-# Load components
-try:
-    X_train, X_test = load_datasets()
-    rf_clf, explainer = load_model_and_explainer(X_train)
-except Exception as e:
-    st.error(f"Error loading files. Check repository folders: {e}")
-    st.stop()
-
-# Class configuration mapping
-cluster_labels = {
+LABELS = {
     0: 'RETAIN',
     1: 'REWARD',
     2: 'NURTURE',
     3: 'RE-ENGAGE'
 }
 
-# --- APPLICATION HEADER ---
-st.title("🎯 Customer Segment Prediction & SHAP Interpretation")
-st.markdown("Interact with customer features below to evaluate classifications and explore live structural insights.")
-st.write("---")
+# 2. Cached Training Pipeline (Runs once on app startup)
+@st.cache_resource
+def train_and_initialize_explainer():
+    # Load raw data from your data/ folder
+    df = pd.read_csv("data/preprocessed_labelled_data.csv")
+    
+    X = df[['MonetaryValue', 'Frequency', 'Recency']]
+    y = df['Cluster']
+    
+    # Train/Test Split (exactly as configured in your original training script)
+    X_train, X_test, y_train, y_test = train_test_split(
+        X, y, test_size=0.2, shuffle=True, random_state=42, stratify=y
+    )
+    
+    # Train the Random Forest
+    rf_clf = RandomForestClassifier(n_estimators=100, random_state=42)
+    rf_clf.fit(X_train, y_train)
+    
+    # FIX: Explicitly pass X_train here to calculate empirical data distribution means.
+    # This prevents the baseline from defaulting to an unweighted 0.25.
+    explainer = shap.TreeExplainer(rf_clf, data=X_train)
+    
+    return rf_clf, explainer
 
-# --- SIDEBAR FOR INTERACTIVE INPUTS ---
-st.sidebar.header("🕹️ Customer Feature Inputs")
+# Trigger training or pull from cache
+with st.spinner("🔄 Training Random Forest and initializing SHAP explainer..."):
+    try:
+        rf_clf, explainer = train_and_initialize_explainer()
+    except FileNotFoundError:
+        st.error("⚠️ Data file not found! Please upload 'preprocessed_labelled_data.csv' into your 'data/' folder on GitHub.")
+        st.stop()
 
-# Dynamically set boundaries based on your test set distribution
-monetary_input = st.sidebar.number_input(
+# 3. Sidebar Input Elements for Features
+st.sidebar.header("📥 Input Customer Features")
+
+monetary_value = st.sidebar.number_input(
     "Monetary Value ($)", 
-    min_value=float(X_test['MonetaryValue'].min()), 
-    max_value=float(X_test['MonetaryValue'].max()), 
-    value=float(X_test['MonetaryValue'].median()),
+    min_value=0.0, 
+    max_value=50000.0, 
+    value=150.0, 
     step=10.0
 )
-
-frequency_input = st.sidebar.number_input(
-    "Frequency (Visits)", 
-    min_value=float(X_test['Frequency'].min()), 
-    max_value=float(X_test['Frequency'].max()), 
-    value=float(X_test['Frequency'].median()),
-    step=1.0
+frequency = st.sidebar.slider(
+    "Frequency (Total Visits)", 
+    min_value=1, 
+    max_value=100, 
+    value=1, 
+    step=1
+)
+recency = st.sidebar.slider(
+    "Recency (Days Since Last Purchase)", 
+    min_value=0, 
+    max_value=365, 
+    value=110, 
+    step=1
 )
 
-recency_input = st.sidebar.number_input(
-    "Recency (Days)", 
-    min_value=float(X_test['Recency'].min()), 
-    max_value=float(X_test['Recency'].max()), 
-    value=float(X_test['Recency'].median()),
-    step=1.0
-)
+# Convert inputs into a single-row DataFrame matching the model features
+user_input_df = pd.DataFrame([{
+    'MonetaryValue': monetary_value,
+    'Frequency': frequency,
+    'Recency': recency
+}])
 
-# Format current input features into a clean 1-row query DataFrame matrix matching X_test schema
-custom_features = {
-    'MonetaryValue': monetary_input,
-    'Frequency': frequency_input,
-    'Recency': recency_input
-}
-input_df = pd.DataFrame([custom_features])[X_test.columns].astype(X_test.dtypes)
+# 4. Generate Predictions
+hard_prediction = rf_clf.predict(user_input_df)[0]
+predicted_label = LABELS[hard_prediction]
 
-# --- RUN LIVE INFERENCE AND METRICS RENDERING ---
-st.subheader('1. Live Model Inference')
+soft_prediction_probabilities = rf_clf.predict_proba(user_input_df)[0]
 
-# Apply model to make predictions (Decimals bounded exactly between 0.0 and 1.0)
-prediction = rf_clf.predict(input_df)
-prediction_proba = rf_clf.predict_proba(input_df)
-
-# Convert probability matrix directly to a DataFrame (Sums up exactly to 1.0)
-df_prediction_proba = pd.DataFrame(prediction_proba)
-df_prediction_proba.columns = [cluster_labels[0], cluster_labels[1], cluster_labels[2], cluster_labels[3]]
-
-# Render the probability data sheet using interactive Progress Columns
-st.dataframe(
-    df_prediction_proba,
-    column_config={
-        'RETAIN': st.column_config.ProgressColumn('RETAIN (Class 0)', format='%.4f', min_value=0.0, max_value=1.0),
-        'REWARD': st.column_config.ProgressColumn('REWARD (Class 1)', format='%.4f', min_value=0.0, max_value=1.0),
-        'NURTURE': st.column_config.ProgressColumn('NURTURE (Class 2)', format='%.4f', min_value=0.0, max_value=1.0),
-        'RE-ENGAGE': st.column_config.ProgressColumn('RE-ENGAGE (Class 3)', format='%.4f', min_value=0.0, max_value=1.0),
-    },
-    hide_index=True,
-    use_container_width=True
-)
-
-# Extract and display the hard prediction point integer value outcome
-final_predicted_class = int(prediction[0])
-cluster_names = np.array([cluster_labels[0], cluster_labels[1], cluster_labels[2], cluster_labels[3]])
-st.success(f"🎯 Assigned Cluster Outcome: **{cluster_names[final_predicted_class]} (Class {final_predicted_class})**")
-
-st.markdown("---")
-
-# --- MAIN DASHBOARD INTERPRETATION LAYOUT ---
-col1, col2 = st.columns([1, 1])
+# 5. Display Predictions Dashboard
+col1, col2 = st.columns(2)
 
 with col1:
-    st.subheader("⏱️ Live Local Explanation (Waterfall Plot)")
-    st.caption(f"Visualizing feature transitions pushing this specific client toward the **{cluster_names[final_predicted_class]}** cluster.")
-    
-    try:
-        # Compute the live SHAP matrix values for the active user input row
-        # TreeExplainer outputs an array shape of (samples, features, classes) for multiclass models
-        shap_values_live = explainer.shap_values(input_df)
-        
-        # Slice index 0 for the single row matrix vector, and target the active predicted class dimension
-        live_values = shap_values_live[0, :, final_predicted_class]
-        base_value = explainer.expected_value[final_predicted_class]
-        
-        # Reconstruct the authenticated SHAP Explanation object container
-        shap_explanation_live = shap.Explanation(
-            values=live_values,
-            base_values=base_value,
-            data=input_df.iloc[0],
-            feature_names=input_df.columns
-        )
-        
-        # Disable LaTeX formatting style parsing strings to prevent layout crashes on '$' tokens
-        plt.rcParams['text.usetex'] = False
-        
-        # Capture plot canvas inside a native Matplotlib figure framework
-        fig_waterfall, ax_waterfall = plt.subplots(figsize=(8, 4.5))
-        shap.plots.waterfall(shap_explanation_live, show=False)
-        plt.title(f"Local Adjustments for Class {final_predicted_class}: {cluster_names[final_predicted_class]}", fontsize=12, pad=10)
-        plt.tight_layout()
-        st.pyplot(fig_waterfall, clear_figure=True)
-        
-    except Exception as e:
-        st.error(f"❌ **Local SHAP Processing Error:** {str(e)}")
+    st.subheader("🎯 Assignment")
+    st.metric(label="Predicted Cluster", value=predicted_label)
 
 with col2:
-    st.subheader("🌎 Historical Macro View (Global Beeswarm Plot)")
-    st.caption(f"Reviewing baseline feature weight trends for the **{cluster_names[final_predicted_class]}** cohort across the entire test set.")
-    
-    try:
-        # Pre-calculate global test set SHAP arrays for the currently selected active cluster
-        @st.cache_data
-        def compute_cached_global_shap(_explainer_engine, _test_df):
-            return _explainer_engine(_test_df, check_additivity=False)
-            
-        global_shap_values = compute_cached_global_shap(explainer, X_test)
-        class_global_explanation = global_shap_values[:, :, final_predicted_class]
-        
-        # Handle Matplotlib figure drawing for global visualization
-        fig_beeswarm, ax_beeswarm = plt.subplots(figsize=(8, 5))
-        shap.plots.beeswarm(class_global_explanation, max_display=3, show=False)
-        plt.title(f"Global Cohort Weight: {cluster_names[final_predicted_class]}", fontsize=12, pad=10)
-        plt.tight_layout()
-        st.pyplot(fig_beeswarm, clear_figure=True)
-        
-    except Exception as e:
-        st.error(f"❌ **Global SHAP Processing Error:** {str(e)}")
+    st.subheader("📊 Probability Breakdown")
+    prob_df = pd.DataFrame({
+        "Cluster": list(LABELS.values()),
+        "Probability": soft_prediction_probabilities
+    })
+    st.dataframe(
+        prob_df.style.format({"Probability": "{:.2%}"}),
+        hide_index=True
+    )
 
+# 6. Compute and Display SHAP Waterfall Chart
+st.write("---")
+st.subheader(f"🔍 SHAP Waterfall Explanation for Cluster: {predicted_label}")
 
+# Compute SHAP values using the modern __call__ syntax for the user's specific inputs
+shap_output = explainer(user_input_df)
+
+fig, ax = plt.subplots(figsize=(8, 4.5))
+
+# FIX: Plot the waterfall diagram using correct structural array slicing from shap_output.
+# base_values is now extracted directly from the explanation object (reflecting the class imbalance)
+shap.plots.waterfall(
+    shap.Explanation(
+        values=shap_output.values[0, :, hard_prediction],
+        base_values=shap_output.base_values[0, hard_prediction], 
+        data=user_input_df.iloc[0],
+        feature_names=user_input_df.columns
+    ),
+    show=False
+)
+
+plt.tight_layout()
+st.pyplot(fig)
 
