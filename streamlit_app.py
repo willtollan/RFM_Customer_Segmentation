@@ -210,7 +210,7 @@ with st.expander('Random Forest Classifier', expanded=False):
     
     cm_col1, cm_col2, cm_col3 = st.columns([1, 6, 1])
     with cm_col2:
-    st.image('images/tuned_RF_confusion_matrix.png', use_column_width=True)
+        st.image('images/tuned_RF_confusion_matrix.png', use_column_width=True)
 
 
 # ----------------------------------------------------
