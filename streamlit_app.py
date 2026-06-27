@@ -5,6 +5,12 @@ import shap
 import matplotlib.pyplot as plt
 import numpy as np
 
+# Configure layout to fit wide data tables comfortably
+st.set_page_config(page_title="Machine Learning App", layout="wide")
+
+st.title('🤖 Machine Learning App')
+st.info('This app processes transaction data, analyzes customer cohorts, and deploys a live customer classification engine.')
+
 # 1. Page Configuration
 st.set_page_config(page_title="Customer Cluster Explainer", layout="wide")
 st.title("🛍️ Customer Cluster Predictor & SHAP Explainer")
