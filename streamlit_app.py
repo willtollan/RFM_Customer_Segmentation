@@ -158,6 +158,64 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
             st.error("Could not find 'images/cluster_violinplot_by_features.png'.")
 
 # ----------------------------------------------------
+# 4. RANDOM FOREST CLASSIFIER PERFORMANCE METRICS
+# ----------------------------------------------------
+
+with st.expander('Random Forest Classifier', expanded=False):
+    
+    # --- Random Forest Best Parameters ---
+    st.subheader('Random Forest Best Parameters')
+    st.write('The optimal hyperparameters found during the grid search tuning optimization phase:')
+    
+    param_col1, param_col2, param_col3 = st.columns([1.5, 5, 1.5])
+    with param_col2:
+        try:
+            st.image('images/tuned_RF_best_params.png', width=800)
+        except FileNotFoundError:
+            st.error("Could not find 'images/tuned_RF_best_params.png'.")
+            
+    st.markdown("---")
+    
+    # --- Key Metrics Section ---
+    st.subheader('Key Metrics')
+    st.write('Overall evaluation metrics for the tuned Random Forest classification model:')
+    
+    met_col1, met_col2, met_col3 = st.columns([1.5, 5, 1.5])
+    with met_col2:
+        try:
+            df_rf_metrics = load_rf_metrics('data/tuned_RF_key_metrics.csv')
+            st.dataframe(df_rf_metrics, use_container_width=True)
+        except FileNotFoundError:
+            st.error("Could not find 'data/tuned_RF_key_metrics.csv'.")
+        
+    st.markdown("---")
+    
+    # --- Classification Report Section ---
+    st.subheader('Classification Report')
+    st.write('Detailed performance metrics breakdown including precision, recall, and f1-score per cluster target:')
+    
+    rep_col1, rep_col2, rep_col3 = st.columns([1.5, 5, 1.5])
+    with rep_col2:
+        try:
+            df_rf_report = load_rf_report('data/tuned_RF_classification_report.csv')
+            st.dataframe(df_rf_report, use_container_width=True)
+        except FileNotFoundError:
+            st.error("Could not find 'data/tuned_RF_classification_report.csv'.")
+        
+    st.markdown("---")
+    
+    # --- Confusion Matrix Section (Small Format Plot) ---
+    st.subheader('Confusion Matrix')
+    st.write('Matrix visualising the actual versus predicted classification distributions on test data subsets:')
+    
+    cm_col1, cm_col2, cm_col3 = st.columns(3)
+    with cm_col2:
+        try:
+            st.image('images/tuned_RF_confusion_matrix.png', width=600)
+        except FileNotFoundError:
+            st.error("Could not find 'images/tuned_RF_confusion_matrix.png'.")
+
+# ----------------------------------------------------
 # Classification Prediction and SHAP Explainability
 # ----------------------------------------------------
 
