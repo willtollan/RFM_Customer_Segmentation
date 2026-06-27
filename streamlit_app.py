@@ -208,12 +208,10 @@ with st.expander('Random Forest Classifier', expanded=False):
     st.subheader('Confusion Matrix')
     st.write('Matrix visualising the actual versus predicted classification distributions on test data subsets:')
     
-    cm_col1, cm_col2, cm_col3 = st.columns(3)
+    cm_col1, cm_col2, cm_col3 = st.columns([1, 6, 1])
     with cm_col2:
-        try:
-            st.image('images/tuned_RF_confusion_matrix.png', width=1200)
-        except FileNotFoundError:
-            st.error("Could not find 'images/tuned_RF_confusion_matrix.png'.")
+    st.image('images/tuned_RF_confusion_matrix.png', use_column_width=True)
+
 
 # ----------------------------------------------------
 # Classification Prediction and SHAP Explainability
