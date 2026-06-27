@@ -150,10 +150,10 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
     st.subheader('Cluster Boxplot Plots by Feature')
     st.write('Distribution spread and density of Recency, Frequency, and Monetary Value across each cluster:')
     
-    v_col1, v_col2, v_col3 = st.columns([1.5, 8, 1.5])
+    v_col1, v_col2, v_col3 = st.columns([1.5, 5, 1.5])
     with v_col2:
         try:
-            st.image('images/cluster_boxplot_by_features.png', width=600)
+            st.image('images/cluster_boxplot_by_features.png', width=800)
         except FileNotFoundError:
             st.error("Could not find 'images/cluster_boxplot_by_features.png'.")
 
