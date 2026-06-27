@@ -11,6 +11,86 @@ st.set_page_config(page_title="Machine Learning App", layout="wide")
 st.title('🤖 Machine Learning App')
 st.info('This app processes transaction data, analyzes customer cohorts, and deploys a live customer classification engine.')
 
+# ----------------------------------------------------
+# 1. CACHED DATA & ARTIFACT LOADING FUNCTIONS
+# ----------------------------------------------------
+
+@st.cache_data
+def load_raw_data(file_path):
+    # Force 'Invoice' and 'StockCode' columns to strings to prevent PyArrow rendering crashes
+    return pd.read_excel(file_path, nrows=1000, dtype={'Invoice': str, 'StockCode': str})
+
+@st.cache_data
+def load_preprocessed_data(file_path):
+    return pd.read_csv(file_path)
+
+@st.cache_data
+def load_labeled_data(file_path):
+    return pd.read_csv(file_path)
+
+@st.cache_data
+def load_centroids_data(file_path):
+    return pd.read_csv(file_path)
+
+@st.cache_data
+def load_rf_metrics(file_path):
+    return pd.read_csv(file_path)
+
+@st.cache_data
+def load_rf_report(file_path):
+    return pd.read_csv(file_path)
+
+# --- Safely Initialize Base Processing Dependencies (Cached) ---
+try:
+    df_preprocessed = load_preprocessed_data('data/preprocessed_data.csv')
+    df_labeled = load_labeled_data('data/preprocessed_labelled_data.csv')
+except FileNotFoundError as e:
+    st.error(f"Initialization mismatch error: {e}. Please check your repository file paths.")
+
+# ----------------------------------------------------
+# 2. DATA INSPECTION WORKSPACE COMPONENT
+# ----------------------------------------------------
+
+with st.expander('Data Inspection Workspace', expanded=False):
+    
+    # --- Raw Data Section ---
+    st.subheader('Raw Data')
+    st.write('This is a preview (first 1000 rows) of the original transaction dataset from the source Excel file:')
+    try:
+        df_raw = load_raw_data('data/online_retail_II.xlsx')
+        st.dataframe(df_raw)
+    except FileNotFoundError:
+        st.error("Could not find 'data/online_retail_II.xlsx'.")
+
+    st.markdown("---") 
+
+    # --- Preprocessed Data Section ---
+    st.subheader('Preprocessed Data')
+    st.write('This is the fully aggregated, cleaned, and outlier-filtered RFM feature dataset:')
+    try:
+        st.dataframe(df_preprocessed)
+        st.metric(label="Total Unique Customers", value=len(df_preprocessed))
+    except NameError:
+        st.error("Preprocessed dataframe not initialized.")
+
+    st.markdown("---")
+
+    # --- Preprocessed Data with Labels Section ---
+    st.subheader('Preprocessed Data with Labels')
+    st.write('This is the feature dataset including the target label index and label name for classification:')
+    try:
+        st.dataframe(df_labeled)
+        st.metric(label="Total Unique Labelled Customers", value=len(df_labeled))
+        
+        # --- Train/Test Split Note ---
+        st.info("💡 **Modeling Note:** Prior to training, an **80% training and 20% testing split** was performed on this dataset. The split utilised **random shuffling** to remove structural order bias and **stratification** to strictly preserve original class balances across subsets.")
+    except NameError:
+        st.error("Labeled dataframe not initialized.")
+
+# ----------------------------------------------------
+# Classification Prediction and SHAP Explainability
+# ----------------------------------------------------
+
 # 1. Page Configuration
 st.set_page_config(page_title="Customer Cluster Explainer", layout="wide")
 st.title("🛍️ Customer Cluster Predictor & SHAP Explainer")
