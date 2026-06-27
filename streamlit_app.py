@@ -153,7 +153,7 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
     v_col1, v_col2, v_col3 = st.columns([1.5, 5, 1.5])
     with v_col2:
         try:
-            st.image('images/cluster_boxplot_by_features.png', width=800)
+            st.image('images/cluster_boxplot_by_features.png', width=900)
         except FileNotFoundError:
             st.error("Could not find 'images/cluster_boxplot_by_features.png'.")
 
