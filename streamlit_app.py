@@ -457,8 +457,10 @@ st.info(f"💡 Recommended Strategy: {cluster_info.get('strategy', 'No strategy 
 
 
 # ----------------------------------------------------
-# 7. Feature Sensitivity Analysis (FIXED LAYOUT SPEC)
+# 7. Feature Sensitivity Analysis (Altair Dynamic Chart)
 # ----------------------------------------------------
+import altair as alt
+
 st.write("---")
 st.subheader("🎛️ Feature Sensitivity Analysis")
 st.caption("See how changing a single variable impacts all cluster probabilities using the exact same SHAP engine as the dashboard above.")
@@ -481,7 +483,7 @@ else:  # Recency
 feature_range = np.arange(min_val, max_val + step_val, step_val)
 
 try:
-    # Clone user_input_df while preserving column names and data types
+    # Clone user_input_df while perfectly preserving column names and data types
     sensitivity_df = pd.concat([user_input_df] * len(feature_range), ignore_index=True)
     
     # Inject the sweeping range into the target feature safely
@@ -514,37 +516,51 @@ try:
     plot_df = pd.DataFrame(normalized_shap_matrix, columns=[LABELS[i] for i in sorted(LABELS.keys())])
     plot_df[target_feature] = feature_range
 
-    # Melt data for native Streamlit line chart structure
+    # Melt data for Altair long-form structure
     melted_df = plot_df.melt(
         id_vars=[target_feature], 
         var_name="Cohort Cluster", 
         value_name="Probability"
     )
 
-    # FIX: Explicitly pass a spec layout integer (2 columns) or a ratio list [3, 1]
+    # Allocate specific ratio layout: 3 parts chart, 1 part side narrative panel
     col_chart, col_info = st.columns([3, 1])
     
     with col_chart:
-        st.line_chart(
-            melted_df, 
-            x=target_feature, 
-            y="Probability", 
-            color="Cohort Cluster",
-            use_container_width=True
+        # A. Base line visualization for cluster probability trajectories
+        lines = alt.Chart(melted_df).mark_line(strokeWidth=2.5).encode(
+            x=alt.X(f'{target_feature}:Q', title=f"{target_feature} Range"),
+            y=alt.Y('Probability:Q', title='Cohort Probability', scale=alt.Scale(domain=[0.0, 1.0])),
+            color=alt.Color('Cohort Cluster:N', title='Cohort Cluster')
         )
         
+        # B. Generate a vertical baseline marker mapping the exact live slider position
+        current_val_scalar = float(user_input_df[target_feature].iloc[0])
+        rule_df = pd.DataFrame({'current_x': [current_val_scalar]})
+        
+        rule = alt.Chart(rule_df).mark_rule(
+            color='#ef4444', 
+            strokeDash=[4, 4], 
+            strokeWidth=2
+        ).encode(
+            x='current_x:Q'
+        )
+        
+        # Combined layered engine chart display
+        st.altair_chart(lines + rule, use_container_width=True)
+        
     with col_info:
-        current_val = user_input_df[target_feature].values[0]
-        st.markdown(f"**Current Static Value:**")
-        st.info(f"{target_feature} = {current_val}")
+        st.markdown(f"**Current Active Value:**")
+        st.info(f"{target_feature} = {current_val_scalar}")
         st.markdown("""
-        **Why this graph is accurate:**
-        * It uses the exact same **SHAP margin engine** as your main dashboard.
-        * The curve shows exactly how the local waterfall contributions shift as you move the slider.
+        **How to read this chart:**
+        * The **dashed red line** shows where your current sidebar customer profile stands.
+        * Watch where lines cross—that indicates the exact threshold where a minor adjustment to an input will flip a customer's primary cohort assignment.
         """)
 
 except Exception as sens_err:
     st.error(f"Could not calculate sensitivity tracking metrics: {sens_err}")
+
 
 
 
