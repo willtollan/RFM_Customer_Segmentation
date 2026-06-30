@@ -1,0 +1,2 @@
+clf__class_weight,clf__max_depth,clf__max_features,clf__min_samples_leaf,clf__min_samples_split,clf__n_estimators
+balanced,30,log2,1,3,143
