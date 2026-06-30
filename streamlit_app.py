@@ -202,7 +202,7 @@ with st.expander('Surrogate Classifier', expanded=False):
     with met_col2:
         try:
             df_rf_metrics = load_rf_metrics('data/tuned_RF_key_metrics.csv')
-            st.dataframe(df_rf_metrics, use_container_width=True)
+            st.dataframe(df_rf_metrics, use_container_width=True, hide_index=True)
         except FileNotFoundError:
             st.error("Could not find 'data/tuned_RF_key_metrics.csv'.")
         
@@ -216,7 +216,7 @@ with st.expander('Surrogate Classifier', expanded=False):
     with rep_col2:
         try:
             df_rf_report = load_rf_report('data/tuned_RF_classification_report.csv')
-            st.dataframe(df_rf_report, use_container_width=True)
+            st.dataframe(df_rf_report, use_container_width=True, hide_index=True)
         except FileNotFoundError:
             st.error("Could not find 'data/tuned_RF_classification_report.csv'.")
         
