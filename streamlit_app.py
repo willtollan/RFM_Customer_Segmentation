@@ -188,8 +188,7 @@ with st.expander('Surrogate Classifier', expanded=False):
     with met_col2:
         try:
             df_rf_best_params = load_rf_best_params('data/RF_best_params.csv')
-            st.dataframe(df_rf_best_params, use_container_width=True)
-            st.dataframe(df_rf_best_params, hide_index=True)
+            st.dataframe(df_rf_best_params, use_container_width=True, hide_index=True)
         except FileNotFoundError:
             st.error("Could not find 'data/RF_best_params.csv'.")
         
