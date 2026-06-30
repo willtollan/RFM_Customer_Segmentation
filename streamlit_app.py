@@ -198,7 +198,7 @@ with st.expander('Surrogate Classifier', expanded=False):
     st.subheader('Key Metrics')
     st.write('Overall evaluation metrics for the tuned Random Forest classification model:')
     
-    met_col1, met_col2, met_col3 = st.columns([1.5, 5, 1.5])
+    met_col1, met_col2, met_col3 = st.columns([1.5, 4, 1.5])
     with met_col2:
         try:
             df_rf_metrics = load_rf_metrics('data/tuned_RF_key_metrics.csv')
