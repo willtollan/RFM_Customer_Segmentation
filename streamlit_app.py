@@ -457,7 +457,7 @@ st.info(f"💡 Recommended Strategy: {cluster_info.get('strategy', 'No strategy 
 
 
 # ----------------------------------------------------
-# 7. Feature Sensitivity Analysis (FIXED INDEX ALIGNMENT)
+# 7. Feature Sensitivity Analysis (FIXED LAYOUT SPEC)
 # ----------------------------------------------------
 st.write("---")
 st.subheader("🎛️ Feature Sensitivity Analysis")
@@ -481,7 +481,7 @@ else:  # Recency
 feature_range = np.arange(min_val, max_val + step_val, step_val)
 
 try:
-    # FIX: Robustly clone user_input_df while perfectly preserving column names and data types
+    # Clone user_input_df while preserving column names and data types
     sensitivity_df = pd.concat([user_input_df] * len(feature_range), ignore_index=True)
     
     # Inject the sweeping range into the target feature safely
@@ -521,8 +521,8 @@ try:
         value_name="Probability"
     )
 
-    # Render interactive line chart and historical indicator
-    col_chart, col_info = st.columns()
+    # FIX: Explicitly pass a spec layout integer (2 columns) or a ratio list [3, 1]
+    col_chart, col_info = st.columns([3, 1])
     
     with col_chart:
         st.line_chart(
@@ -545,5 +545,6 @@ try:
 
 except Exception as sens_err:
     st.error(f"Could not calculate sensitivity tracking metrics: {sens_err}")
+
 
 
