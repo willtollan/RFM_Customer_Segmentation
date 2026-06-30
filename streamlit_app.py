@@ -415,3 +415,44 @@ with col_plot2:
     plt.title(f"Global Cohort Weight: {predicted_label}", fontsize=12, pad=10)
     plt.tight_layout()
     st.pyplot(fig_beeswarm, clear_figure=True)
+    
+
+# ----------------------------------------------------
+# Cluster Description & Recommended Strategy
+# ----------------------------------------------------
+
+# 7. Dynamic Cluster Description & Strategy Section
+st.write("---")
+st.subheader("📝 Cluster Description & Recommended Strategy")
+
+# Define descriptions, strategies, and emojis for each cluster
+CLUSTER_INFO = {
+    "RETAIN": {
+        "emoji": "🔒",
+        "description": "Customers who are moderately active and valuable, but not top-tier. They are steady but could drift away if ignored.",
+        "strategy": "Keep them engaged with loyalty points, personalized recommendations, and consistent communication."
+    },
+    "REWARD": {
+        "emoji": "🎁",
+        "description": "Customers who buy frequently, spend a lot, and purchased recently. These are your best customers — loyal and high-value.",
+        "strategy": "Reward them with exclusive offers, VIP programs, or early access."
+    },
+    "NURTURE": {
+        "emoji": "🌱",
+        "description": "New or low-value customers who purchased recently but haven’t yet shown loyalty or high spend. They’re at the beginning of their journey.",
+        "strategy": "Nurture them with onboarding, education, and incentives to build habits."
+    },
+    "RE-ENGAGE": {
+        "emoji": "🔄",
+        "description": "Customers who haven’t purchased in a long time, spend little, and rarely buy. They are at risk of churn or already inactive.",
+        "strategy": "Win them back with reactivation campaigns, discounts, or reminders."
+    }
+}
+
+# Dynamically display based on prediction
+cluster_info = CLUSTER_INFO.get(predicted_label, {})
+emoji = cluster_info.get("emoji", "")
+st.markdown(f"**Cluster Classification:** {emoji} {predicted_label}")
+st.write(cluster_info.get("description", "No description available."))
+st.info(f"💡 Recommended Strategy: {cluster_info.get('strategy', 'No strategy available.')}")
+
