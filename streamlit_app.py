@@ -170,7 +170,7 @@ with st.expander('Surrogate Classifier', expanded=False):
     param_col1, param_col2, param_col3 = st.columns([1.5, 5, 1.5])
     with param_col2:
         try:
-            st.image('images/classifier_performance_comparison.png', width=800)
+            st.image('images/classifier_performance_comparison.png', width=900)
         except FileNotFoundError:
             st.error("Could not find 'images/classifier_performance_comparison.png'.")
             
