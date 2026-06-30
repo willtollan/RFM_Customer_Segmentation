@@ -184,7 +184,7 @@ with st.expander('Surrogate Classifier', expanded=False):
     st.subheader('Random Forest Best Parameters')
     st.write('The optimal hyperparameters found during the grid search tuning optimization phase (Randomized Cross-Validation Search):')
     
-    met_col1, met_col2, met_col3 = st.columns([1.5, 5, 1.5])
+    met_col1, met_col2, met_col3 = st.columns([1.5, 6, 1.5])
     with met_col2:
         try:
             df_rf_best_params = load_rf_best_params('data/RF_best_params.csv')
