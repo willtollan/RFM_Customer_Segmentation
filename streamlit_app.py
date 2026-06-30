@@ -33,6 +33,10 @@ def load_centroids_data(file_path):
     return pd.read_csv(file_path)
 
 @st.cache_data
+def load_rf_best_params(file_path):
+    return pd.read_csv(file_path)
+
+@st.cache_data
 def load_rf_metrics(file_path):
     return pd.read_csv(file_path)
 
@@ -178,15 +182,16 @@ with st.expander('Surrogate Classifier', expanded=False):
     
     # --- Random Forest Best Parameters ---
     st.subheader('Random Forest Best Parameters')
-    st.write('The optimal hyperparameters found during the grid search tuning optimization phase:')
+    st.write('The optimal hyperparameters found during the grid search tuning optimization phase (Randomized Cross-Validation Search):')
     
-    param_col1, param_col2, param_col3 = st.columns([1.5, 5, 1.5])
-    with param_col2:
+    met_col1, met_col2, met_col3 = st.columns([1.5, 5, 1.5])
+    with met_col2:
         try:
-            st.image('images/tuned_RF_best_params.png', width=800)
+            df_rf_best_params = load_rf_best_params('data/RF_best_params.csv')
+            st.dataframe(df_rf_best_params, use_container_width=True)
         except FileNotFoundError:
-            st.error("Could not find 'images/tuned_RF_best_params.png'.")
-            
+            st.error("Could not find 'data/RF_best_params.csv'.")
+        
     st.markdown("---")
     
     # --- Key Metrics Section ---
