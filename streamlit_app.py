@@ -457,9 +457,8 @@ st.info(f"💡 Recommended Strategy: {cluster_info.get('strategy', 'No strategy 
 
 
 # ----------------------------------------------------
-# 7. Feature Sensitivity Analysis (SHAP-Aligned Approach)
+# 7. Feature Sensitivity Analysis (FIXED INDEX ALIGNMENT)
 # ----------------------------------------------------
-
 st.write("---")
 st.subheader("🎛️ Feature Sensitivity Analysis")
 st.caption("See how changing a single variable impacts all cluster probabilities using the exact same SHAP engine as the dashboard above.")
@@ -481,16 +480,17 @@ else:  # Recency
 # Generate a synthetic range of values for the selected feature
 feature_range = np.arange(min_val, max_val + step_val, step_val)
 
-# Build a synthetic dataset cloning the static user inputs
-sensitivity_df = pd.DataFrame([user_input_df.iloc] * len(feature_range))
-sensitivity_df[target_feature] = feature_range  # Inject the sweeping range
-
 try:
-    # Ensure correct feature alignment & data types
+    # FIX: Robustly clone user_input_df while perfectly preserving column names and data types
+    sensitivity_df = pd.concat([user_input_df] * len(feature_range), ignore_index=True)
+    
+    # Inject the sweeping range into the target feature safely
+    sensitivity_df[target_feature] = feature_range  
+
+    # Ensure correct feature alignment & data types relative to original test splits
     sensitivity_df = sensitivity_df[X_test.columns].astype(X_test.dtypes)
     
     # 1. Generate SHAP values for the entire sweep matrix
-    # This matches the calculation structure used in Step 4 of your app
     sweep_shap_output = explainer(sensitivity_df, check_additivity=False)
     
     # 2. Extract and sum the base values and SHAP values for all classes
@@ -507,7 +507,6 @@ try:
     shap_proba_matrix = np.column_stack(shap_proba_list)
     
     # 3. Normalize the raw SHAP outputs so they perfectly sum to 100% (0.0 - 1.0)
-    # This fixes the y-axis scaling problem natively across the whole curve
     row_sums = shap_proba_matrix.sum(axis=1, keepdims=True)
     normalized_shap_matrix = shap_proba_matrix / row_sums
     
@@ -545,5 +544,6 @@ try:
         """)
 
 except Exception as sens_err:
-    st.warning(f"Could not calculate sensitivity tracking metrics: {sens_err}")
+    st.error(f"Could not calculate sensitivity tracking metrics: {sens_err}")
+
 
