@@ -416,82 +416,6 @@ with col_plot2:
     plt.tight_layout()
     st.pyplot(fig_beeswarm, clear_figure=True)
 
-
-# ----------------------------------------------------
-# 7. Feature Sensitivity Analysis
-# ----------------------------------------------------
-
-st.write("---")
-st.subheader("🎛️ Feature Sensitivity Analysis")
-st.caption("See how changing a single variable impacts all cluster probabilities while keeping other inputs constant.")
-
-# User selects which feature to vary
-target_feature = st.selectbox(
-    "Select a feature to test for sensitivity:",
-    options=list(user_input_df.columns)
-)
-
-# Define logical evaluation ranges based on your sidebar limits
-if target_feature == 'MonetaryValue':
-    min_val, max_val, step_val = 0.0, 50000.0, 500.0
-elif target_feature == 'Frequency':
-    min_val, max_val, step_val = 1.0, 100.0, 1.0
-else:  # Recency
-    min_val, max_val, step_val = 0.0, 365.0, 5.0
-
-# Generate a synthetic range of values for the selected feature
-feature_range = np.arange(min_val, max_val + step_val, step_val)
-
-# Build a synthetic dataset cloning the static user inputs
-sensitivity_df = pd.DataFrame([user_input_df.iloc[0]] * len(feature_range))
-sensitivity_df[target_feature] = feature_range  # Inject the sweeping range
-
-# Predict probabilities across the entire synthetic test set using your classifier
-# Note: Since your model uses TreeExplainer margin outputs for fx probabilities, 
-# we can use the model's native predict_proba for rapid, non-SHAP sweeping array calculations.
-try:
-    # Ensure correct feature alignment & data types
-    sensitivity_df = sensitivity_df[X_test.columns].astype(X_test.dtypes)
-    proba_matrix = rf_clf.predict_proba(sensitivity_df)
-    
-    # Create a DataFrame to hold the results for plotting
-    plot_df = pd.DataFrame(proba_matrix, columns=[LABELS[i] for i in sorted(LABELS.keys())])
-    plot_df[target_feature] = feature_range
-
-    # Melt data for native Streamlit line chart structure
-    melted_df = plot_df.melt(
-        id_vars=[target_feature], 
-        var_name="Cohort Cluster", 
-        value_name="Probability"
-    )
-
-    # Render interactive line chart and historical indicator
-    col_chart, col_info = st.columns([3, 1])
-    
-    with col_chart:
-        st.line_chart(
-            melted_df, 
-            x=target_feature, 
-            y="Probability", 
-            color="Cohort Cluster",
-            use_container_width=True
-        )
-        
-    with col_info:
-        current_val = user_input_df[target_feature].values[0]
-        st.markdown(f"**Current Static Value:**")
-        st.info(f"{target_feature} = {current_val}")
-        st.markdown("""
-        **How to read this chart:**
-        * Look for **crossover points** where lines intersect. This indicates the threshold where a customer transitions into a new cohort.
-        * **Flat lines** mean the model is insensitive to changes in that specific feature range.
-        """)
-
-except Exception as sens_err:
-    st.warning(f"Could not calculate sensitivity tracking metrics: {sens_err}")
-
-    
-
 # ----------------------------------------------------
 # Cluster Description & Recommended Strategy
 # ----------------------------------------------------
@@ -530,4 +454,96 @@ emoji = cluster_info.get("emoji", "")
 st.markdown(f"**Cluster Classification:** {emoji} {predicted_label}")
 st.write(cluster_info.get("description", "No description available."))
 st.info(f"💡 Recommended Strategy: {cluster_info.get('strategy', 'No strategy available.')}")
+
+
+# ----------------------------------------------------
+# 7. Feature Sensitivity Analysis (SHAP-Aligned Approach)
+# ----------------------------------------------------
+
+st.write("---")
+st.subheader("🎛️ Feature Sensitivity Analysis")
+st.caption("See how changing a single variable impacts all cluster probabilities using the exact same SHAP engine as the dashboard above.")
+
+# User selects which feature to vary
+target_feature = st.selectbox(
+    "Select a feature to test for sensitivity:",
+    options=list(user_input_df.columns)
+)
+
+# Define logical evaluation ranges based on your sidebar limits
+if target_feature == 'MonetaryValue':
+    min_val, max_val, step_val = 0.0, 50000.0, 500.0
+elif target_feature == 'Frequency':
+    min_val, max_val, step_val = 1.0, 100.0, 1.0
+else:  # Recency
+    min_val, max_val, step_val = 0.0, 365.0, 5.0
+
+# Generate a synthetic range of values for the selected feature
+feature_range = np.arange(min_val, max_val + step_val, step_val)
+
+# Build a synthetic dataset cloning the static user inputs
+sensitivity_df = pd.DataFrame([user_input_df.iloc] * len(feature_range))
+sensitivity_df[target_feature] = feature_range  # Inject the sweeping range
+
+try:
+    # Ensure correct feature alignment & data types
+    sensitivity_df = sensitivity_df[X_test.columns].astype(X_test.dtypes)
+    
+    # 1. Generate SHAP values for the entire sweep matrix
+    # This matches the calculation structure used in Step 4 of your app
+    sweep_shap_output = explainer(sensitivity_df, check_additivity=False)
+    
+    # 2. Extract and sum the base values and SHAP values for all classes
+    shap_proba_list = []
+    for class_idx in sorted(LABELS.keys()):
+        class_base_values = sweep_shap_output.base_values[:, class_idx]
+        class_shap_sums = sweep_shap_output.values[:, :, class_idx].sum(axis=1)
+        
+        # Calculate raw SHAP f(x) probabilities across all rows for this class
+        class_fx_probs = class_base_values + class_shap_sums
+        shap_proba_list.append(class_fx_probs)
+        
+    # Stack array to shape (num_samples, num_classes)
+    shap_proba_matrix = np.column_stack(shap_proba_list)
+    
+    # 3. Normalize the raw SHAP outputs so they perfectly sum to 100% (0.0 - 1.0)
+    # This fixes the y-axis scaling problem natively across the whole curve
+    row_sums = shap_proba_matrix.sum(axis=1, keepdims=True)
+    normalized_shap_matrix = shap_proba_matrix / row_sums
+    
+    # Create a DataFrame to hold the results for plotting
+    plot_df = pd.DataFrame(normalized_shap_matrix, columns=[LABELS[i] for i in sorted(LABELS.keys())])
+    plot_df[target_feature] = feature_range
+
+    # Melt data for native Streamlit line chart structure
+    melted_df = plot_df.melt(
+        id_vars=[target_feature], 
+        var_name="Cohort Cluster", 
+        value_name="Probability"
+    )
+
+    # Render interactive line chart and historical indicator
+    col_chart, col_info = st.columns()
+    
+    with col_chart:
+        st.line_chart(
+            melted_df, 
+            x=target_feature, 
+            y="Probability", 
+            color="Cohort Cluster",
+            use_container_width=True
+        )
+        
+    with col_info:
+        current_val = user_input_df[target_feature].values[0]
+        st.markdown(f"**Current Static Value:**")
+        st.info(f"{target_feature} = {current_val}")
+        st.markdown("""
+        **Why this graph is accurate:**
+        * It uses the exact same **SHAP margin engine** as your main dashboard.
+        * The curve shows exactly how the local waterfall contributions shift as you move the slider.
+        """)
+
+except Exception as sens_err:
+    st.warning(f"Could not calculate sensitivity tracking metrics: {sens_err}")
 
