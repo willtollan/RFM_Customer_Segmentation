@@ -161,7 +161,20 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
 # 4. RANDOM FOREST CLASSIFIER PERFORMANCE METRICS
 # ----------------------------------------------------
 
-with st.expander('Random Forest Classifier', expanded=False):
+with st.expander('Surrogate Classifier', expanded=False):
+    
+    # --- Model Selection ---
+    st.subheader('Cross-Validation Results across Multiple Classifiers')
+    st.write('Random Forest Classifier achieved the strongest cross-validation performance')
+    
+    param_col1, param_col2, param_col3 = st.columns([1.5, 5, 1.5])
+    with param_col2:
+        try:
+            st.image('images/classifier_performance_comparison.png', width=800)
+        except FileNotFoundError:
+            st.error("Could not find 'images/classifier_performance_comparison.png'.")
+            
+    st.markdown("---")
     
     # --- Random Forest Best Parameters ---
     st.subheader('Random Forest Best Parameters')
