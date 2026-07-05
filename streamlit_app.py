@@ -560,3 +560,78 @@ try:
 
 except Exception as sens_err:
     st.error(f"Could not calculate sensitivity tracking metrics: {sens_err}")
+
+
+# ----------------------------------------------------
+# Scatter Plot with Clusters
+# ----------------------------------------------------
+
+import matplotlib.patches as mpatches
+
+cluster_colors = {0: '#1f77b4', 1: '#d62728', 2: '#2ca02c', 3: '#ff7f0e'}
+colors = df_labeled['Cluster'].map(cluster_colors)
+
+# Dictionary mapping cluster IDs to your custom business labels
+cluster_labels = {
+    0: "Cluster 0 (RETAIN)",
+    1: "Cluster 1 (REWARD)",
+    2: "Cluster 2 (NURTURE)",
+    3: "Cluster 3 (RE-ENGAGE)"
+}
+
+fig = plt.figure(figsize=(10, 10))
+ax = fig.add_subplot(projection='3d')
+
+# Background points matching your original notebook setup
+# Note: Lowering alpha slightly to 0.6 ensures the star can be seen even if deep inside a cluster
+scatter = ax.scatter(df_labeled['MonetaryValue'],
+                     df_labeled['Frequency'],
+                     df_labeled['Recency'],
+                     c=colors, marker='o', alpha=0.6)
+
+# --- Interactive Element: Overlay Simulated User Data Point ---
+live_x = float(user_input_df['MonetaryValue'].iloc[0])
+live_y = float(user_input_df['Frequency'].iloc[0])
+live_z = float(user_input_df['Recency'].iloc[0])
+live_border_color = cluster_colors[hard_prediction]
+
+# Draw the simulated point
+simulated_scatter = ax.scatter(
+    live_x, 
+    live_y, 
+    live_z, 
+    c='#facc15',                  # High-visibility gold fill
+    marker='*',                   # Star marker to standout
+    s=600,                        # Scaled up slightly more for better visibility
+    edgecolors=live_border_color, # Outline matches assigned cluster color
+    linewidths=2.5
+)
+
+# FIX: Native Matplotlib 3D layering override that works on Streamlit Cloud
+simulated_scatter.set_zorder(999)
+ax.computed_zorder = False  # Tells the 3D engine to respect explicit z-orders over depth calculations
+# -------------------------------------------------------------
+
+ax.set_box_aspect(None, zoom=0.95) 
+
+ax.set_xlabel('Monetary Value')
+ax.set_ylabel('Frequency')
+ax.set_zlabel('Recency')
+
+ax.set_title('3D Scatter Plot of Customer Data by Cluster', pad=20)
+
+legend_handles = [
+    mpatches.Patch(color=color, label=cluster_labels[cluster_id])
+    for cluster_id, color in cluster_colors.items()
+]
+# Append the live user tracker asset to your notebook legend style
+legend_handles.append(
+    plt.Line2D([0], [0], marker='*', color='w', markerfacecolor='#facc15', 
+               markeredgecolor=live_border_color, markersize=15, label='★ Simulated Point')
+)
+
+ax.legend(handles=legend_handles, loc='upper left', bbox_to_anchor=(0.05, 0.95), title="Customer Clusters")
+
+# Render cleanly within the Streamlit interface canvas
+st.pyplot(fig, clear_figure=True)
+
