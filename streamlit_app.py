@@ -645,6 +645,7 @@ with col_left_3d:
 # =========================================================================
 # RIGHT COLUMN: STACKED FEATURE HISTOGRAMS WITH LIVE USER POINTERS
 # =========================================================================
+
 with col_right_hist:
     st.subheader("📊 Profile Feature Distributions")
     
@@ -662,8 +663,20 @@ with col_right_hist:
     for cfg in features_config:
         ax = axes[cfg["idx"]]
         
-        # Plot distribution matching the current cohort colors
-        ax.hist(df_labeled[cfg["col"]], bins=30, color=live_border_color, alpha=0.6, edgecolor='white')
+        # --- DYNAMIC BINNING ADJUSTMENT ---
+        # If processing Frequency, force exactly 1 bin per individual discrete integer value
+        if cfg["col"] == "Frequency":
+            min_val = int(df_labeled[cfg["col"]].min())
+            max_val = int(df_labeled[cfg["col"]].max())
+            # Creates edges at half-intervals (e.g., 0.5, 1.5, 2.5) to center integer tick labels perfectly
+            hist_bins = np.arange(min_val, max_val + 2) - 0.5
+        else:
+            # Fallback to standard grouping resolution for continuous fields
+            hist_bins = 30
+        # ----------------------------------
+        
+        # Plot distribution matching the current cohort colors using the calculated bins array
+        ax.hist(df_labeled[cfg["col"]], bins=hist_bins, color=live_border_color, alpha=0.6, edgecolor='white')
         
         # Dynamic threshold marker tracking user coordinates
         ax.axvline(x=cfg["val"], color='#facc15', linestyle='--', linewidth=3, zorder=5,
@@ -680,6 +693,7 @@ with col_right_hist:
         ax.set_xlim(left=0)
 
     st.pyplot(fig_hist, clear_figure=True)
+
 
 
 
