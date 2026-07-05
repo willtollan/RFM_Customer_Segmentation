@@ -583,7 +583,6 @@ fig = plt.figure(figsize=(10, 10))
 ax = fig.add_subplot(projection='3d')
 
 # Background points matching your original notebook setup
-# Note: Lowering alpha slightly to 0.6 ensures the star can be seen even if deep inside a cluster
 scatter = ax.scatter(df_labeled['MonetaryValue'],
                      df_labeled['Frequency'],
                      df_labeled['Recency'],
@@ -607,10 +606,30 @@ simulated_scatter = ax.scatter(
     linewidths=2.5
 )
 
+# -------------------------------------------------------------
+# DYNAMIC DROP-LINES TO AXIS PLANES
+# -------------------------------------------------------------
+# Get current axis boundaries to align lines perfectly with the bounding box walls
+xmin, xmax = ax.get_xlim()
+ymin, ymax = ax.get_ylim()
+zmin, zmax = ax.get_zlim()
+
+# 1. Drop-line down to the floor (X-Y plane at zmin)
+ax.plot([live_x, live_x], [live_y, live_y], [zmin, live_z], 
+        color=live_border_color, linestyle='--', linewidth=1.5, zorder=1000)
+
+# 2. Drop-line back to the left wall (X-Z plane at ymax)
+ax.plot([live_x, live_x], [live_y, ymax], [live_z, live_z], 
+        color=live_border_color, linestyle='--', linewidth=1.5, zorder=1000)
+
+# 3. Drop-line sideways to the right wall (Y-Z plane at xmin)
+ax.plot([xmin, live_x], [live_y, live_y], [live_z, live_z], 
+        color=live_border_color, linestyle='--', linewidth=1.5, zorder=1000)
+# -------------------------------------------------------------
+
 # FIX: Native Matplotlib 3D layering override that works on Streamlit Cloud
 simulated_scatter.set_zorder(999)
 ax.computed_zorder = False  # Tells the 3D engine to respect explicit z-orders over depth calculations
-# -------------------------------------------------------------
 
 ax.set_box_aspect(None, zoom=0.95) 
 
@@ -634,6 +653,7 @@ ax.legend(handles=legend_handles, loc='upper left', bbox_to_anchor=(0.05, 0.95),
 
 # Render cleanly within the Streamlit interface canvas
 st.pyplot(fig, clear_figure=True)
+
 
 
 
