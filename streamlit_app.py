@@ -579,7 +579,7 @@ cluster_labels = {
     3: "Cluster 3 (RE-ENGAGE)"
 }
 
-fig = plt.figure(figsize=(10, 10))
+fig = plt.figure(figsize=(6, 6))
 ax = fig.add_subplot(projection='3d')
 
 # Background points matching your original notebook setup
