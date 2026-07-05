@@ -568,10 +568,10 @@ except Exception as sens_err:
 
 import matplotlib.patches as mpatches
 
+# --- 1. CORE DATA & METRIC STRUCTURING ---
 cluster_colors = {0: '#1f77b4', 1: '#d62728', 2: '#2ca02c', 3: '#ff7f0e'}
 colors = df_labeled['Cluster'].map(cluster_colors)
 
-# Dictionary mapping cluster IDs to your custom business labels
 cluster_labels = {
     0: "Cluster 0 (RETAIN)",
     1: "Cluster 1 (REWARD)",
@@ -579,70 +579,107 @@ cluster_labels = {
     3: "Cluster 3 (RE-ENGAGE)"
 }
 
-fig = plt.figure(figsize=(10, 10))
-ax = fig.add_subplot(projection='3d')
-
-# Background points matching your original notebook setup
-# Note: Lowering alpha slightly to 0.6 ensures the star can be seen even if deep inside a cluster
-scatter = ax.scatter(df_labeled['MonetaryValue'],
-                     df_labeled['Frequency'],
-                     df_labeled['Recency'],
-                     c=colors, marker='o', alpha=0.6)
-
-# --- Interactive Element: Overlay Simulated User Data Point ---
+# Real-time user slider inputs extracted
 live_x = float(user_input_df['MonetaryValue'].iloc[0])
 live_y = float(user_input_df['Frequency'].iloc[0])
 live_z = float(user_input_df['Recency'].iloc[0])
 live_border_color = cluster_colors[hard_prediction]
 
-# Draw the simulated point
-simulated_scatter = ax.scatter(
-    live_x, 
-    live_y, 
-    live_z, 
-    c='#facc15',                  # High-visibility gold fill
-    marker='*',                   # Star marker to standout
-    s=600,                        # Scaled up slightly more for better visibility
-    edgecolors=live_border_color, # Outline matches assigned cluster color
-    linewidths=2.5
+# --- 2. LAYOUT DEFINITION ---
+# Splits screen into 2 equal-width columns to hold the visuals side-by-side
+col_left_3d, col_right_hist = st.columns([1, 1])
+
+# =========================================================================
+# LEFT COLUMN: 3D SCATTER PLOT
+# =========================================================================
+with col_left_3d:
+    st.subheader("🌐 Customer Space Mapping")
+    
+    fig_3d = plt.figure(figsize=(10, 10))
+    ax_3d = fig_3d.add_subplot(projection='3d')
+
+    # Background points
+    scatter = ax_3d.scatter(df_labeled['MonetaryValue'],
+                            df_labeled['Frequency'],
+                            df_labeled['Recency'],
+                            c=colors, marker='o', alpha=0.6)
+
+    # Simulated active user node overlay
+    simulated_scatter = ax_3d.scatter(
+        live_x, live_y, live_z, 
+        c='#facc15',                  
+        marker='*',                   
+        s=600,                        
+        edgecolors=live_border_color, 
+        linewidths=2.5
+    )
+
+    # Respect manual zorder in 3D canvas
+    simulated_scatter.set_zorder(999)
+    ax_3d.computed_zorder = False  
+
+    ax_3d.set_box_aspect(None, zoom=0.95) 
+    ax_3d.set_xlabel('Monetary Value')
+    ax_3d.set_ylabel('Frequency')
+    ax_3d.set_zlabel('Recency')
+    ax_3d.set_title('3D Customer Distribution by Cluster', pad=20, fontsize=14, weight='bold')
+
+    # Legends setup
+    legend_handles = [
+        mpatches.Patch(color=color, label=cluster_labels[cluster_id])
+        for cluster_id, color in cluster_colors.items()
+    ]
+    legend_handles.append(
+        plt.Line2D([0], [0], marker='*', color='w', markerfacecolor='#facc15', 
+                   markeredgecolor=live_border_color, markersize=15, label='★ Simulated Point')
 )
+    ax_3d.legend(handles=legend_handles, loc='upper left', bbox_to_anchor=(0.05, 0.95), title="Customer Clusters")
 
-# FIX: Native Matplotlib 3D layering override that works on Streamlit Cloud
-simulated_scatter.set_zorder(999)
-ax.computed_zorder = False  # Tells the 3D engine to respect explicit z-orders over depth calculations
-# -------------------------------------------------------------
+    # Lock boundaries at 0 origin
+    ax_3d.set_xlim(left=0)
+    ax_3d.set_ylim(bottom=0)
+    ax_3d.set_zlim(bottom=0)
 
-ax.set_box_aspect(None, zoom=0.95) 
+    st.pyplot(fig_3d, clear_figure=True)
 
-ax.set_xlabel('Monetary Value')
-ax.set_ylabel('Frequency')
-ax.set_zlabel('Recency')
+# =========================================================================
+# RIGHT COLUMN: STACKED FEATURE HISTOGRAMS WITH LIVE USER POINTERS
+# =========================================================================
+with col_right_hist:
+    st.subheader("📊 Profile Feature Distributions")
+    
+    # Initialize a multi-axis figure matching the 10x10 scale of the left side
+    fig_hist, axes = plt.subplots(3, 1, figsize=(10, 10))
+    plt.subplots_adjust(hspace=0.4) # Add buffer room between rows
+    
+    # Base configuration package for clean rendering loops
+    features_config = [
+        {"col": "MonetaryValue", "val": live_x, "label": "Monetary Value", "idx": 0},
+        {"col": "Frequency", "val": live_y, "label": "Frequency", "idx": 1},
+        {"col": "Recency", "val": live_z, "label": "Recency", "idx": 2}
+    ]
+    
+    for cfg in features_config:
+        ax = axes[cfg["idx"]]
+        
+        # Plot distribution matching the current cohort colors
+        ax.hist(df_labeled[cfg["col"]], bins=30, color=live_border_color, alpha=0.6, edgecolor='white')
+        
+        # Dynamic threshold marker tracking user coordinates
+        ax.axvline(x=cfg["val"], color='#facc15', linestyle='--', linewidth=3, zorder=5,
+                   label=f"Active Input ({cfg['val']:.1f})")
+        
+        # Plot styling parameters
+        ax.set_title(f"{cfg['label']} Distribution Density", fontsize=12, weight='bold', pad=5)
+        ax.set_xlabel(cfg["label"], fontsize=10)
+        ax.set_ylabel("Customer Count", fontsize=10)
+        ax.grid(axis='y', linestyle=':', alpha=0.6)
+        ax.legend(loc='upper right')
+        
+        # Snapping bounds safely
+        ax.set_xlim(left=0)
 
-ax.set_title('3D Scatter Plot of Customer Data by Cluster', pad=20)
+    st.pyplot(fig_hist, clear_figure=True)
 
-legend_handles = [
-    mpatches.Patch(color=color, label=cluster_labels[cluster_id])
-    for cluster_id, color in cluster_colors.items()
-]
-# Append the live user tracker asset to your notebook legend style
-legend_handles.append(
-    plt.Line2D([0], [0], marker='*', color='w', markerfacecolor='#facc15', 
-               markeredgecolor=live_border_color, markersize=15, label='★ Simulated Point')
-)
-
-ax.legend(handles=legend_handles, loc='upper left', bbox_to_anchor=(0.05, 0.95), title="Customer Clusters")
-
-# Force the 3D grid space boundaries to begin exactly at 0
-ax.set_xlim(left=0)
-ax.set_ylim(bottom=0)
-ax.set_zlim(bottom=0)
-
-# --- Streamlit Layout Adjustment: Narrow Column Wrapping ---
-# [1, 2, 1] sets the center column to be twice as wide as the left/right padding blocks
-col_left, col_plot, col_right = st.columns([1, 2, 1])
-
-with col_plot:
-    # Render cleanly within the narrowed middle column
-    st.pyplot(fig, clear_figure=True)
 
 
