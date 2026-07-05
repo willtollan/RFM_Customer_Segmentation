@@ -562,5 +562,101 @@ except Exception as sens_err:
     st.error(f"Could not calculate sensitivity tracking metrics: {sens_err}")
 
 
+# ----------------------------------------------------
+# 7. INTERACTIVE 3D CUSTOMER SPACE MAPPING
+# ----------------------------------------------------
+
+st.write("---")
+st.subheader("🌐 Customer Segmentation Space (3D Mapping)")
+st.caption(
+    "Locate the current customer profile inside the broader company cohorts. "
+    "The large gold star represents your live simulated user input."
+)
+
+# Replicate your custom notebook configurations
+cluster_colors = {0: '#1f77b4', 1: '#d62728', 2: '#2ca02c', 3: '#ff7f0e'}
+cluster_labels = {
+    0: "Cluster 0 (RETAIN)",
+    1: "Cluster 1 (REWARD)",
+    2: "Cluster 2 (NURTURE)",
+    3: "Cluster 3 (RE-ENGAGE)"
+}
+
+# Map historical background point colors using the existing pre-loaded DataFrame
+bg_colors = df_labeled['Cluster'].map(cluster_colors)
+
+# Setup Matplotlib 3D Canvas
+fig_3d = plt.figure(figsize=(10, 8))
+ax_3d = fig_3d.add_subplot(projection='3d')
+
+# 1. Draw Background Historical Points (Slight transparency ensures user point pops out)
+ax_3d.scatter(
+    df_labeled['MonetaryValue'],
+    df_labeled['Frequency'],
+    df_labeled['Recency'],
+    c=bg_colors, 
+    marker='o',
+    s=25,
+    alpha=0.4,
+    edgecolors='none',
+    label='_nolegend_'
+)
+
+# 2. Extract live metrics from your user input variables
+live_x = float(user_input_df['MonetaryValue'].iloc[0])
+live_y = float(user_input_df['Frequency'].iloc[0])
+live_z = float(user_input_df['Recency'].iloc[0])
+
+# Match the user pointer's border color to their predicted class mapping
+live_border_color = cluster_colors[hard_prediction]
+
+# 3. Dynamic Overlay: Inject the simulated customer's position on top
+ax_3d.scatter(
+    live_x, 
+    live_y, 
+    live_z, 
+    c='#facc15',                    # High-contrast bright gold fill
+    marker='*',                     # Eye-catching star marker
+    s=450,                          # Enlarged scale to separate from clusters
+    edgecolors=live_border_color,   # Border matching their assigned cluster identity
+    linewidths=2.5,                 # Thick crisp border boundary
+    alpha=1.0,
+    zorder=10                       # Forces point to render on top of historical cloud
+)
+
+# 4. Canvas Styling & Layout Bounds
+ax_3d.set_box_aspect(None, zoom=0.95) 
+ax_3d.set_xlabel('Monetary Value ($)')
+ax_3d.set_ylabel('Frequency (Visits)')
+ax_3d.set_zlabel('Recency (Days)')
+ax_3d.set_title('Live Profile Position in 3D Customer Space', pad=20, fontsize=14, weight='bold')
+
+# Construct the custom combined legend panels
+import matplotlib.patches as mpatches
+legend_handles = [
+    mpatches.Patch(color=color, label=cluster_labels[cluster_id])
+    for cluster_id, color in cluster_colors.items()
+]
+# Append the live tracker descriptor to the legend list
+legend_handles.append(
+    plt.Line2D([0], [0], marker='*', color='w', markerfacecolor='#facc15', 
+               markeredgecolor=live_border_color, markersize=15, label='★ Current Active Input')
+)
+
+ax_3d.legend(
+    handles=legend_handles, 
+    loc='upper left', 
+    bbox_to_anchor=(0.02, 0.98), 
+    title="Dashboard Map Key"
+)
+
+# Adjust viewing angle safely so all axes are readable at boot
+ax_3d.view_init(elev=20, azim=45)
+
+# Render seamlessly to Streamlit UI wrapper
+st.pyplot(fig_3d, clear_figure=True)
+
+
+
 
 
