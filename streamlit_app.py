@@ -594,7 +594,8 @@ live_y = float(user_input_df['Frequency'].iloc[0])
 live_z = float(user_input_df['Recency'].iloc[0])
 live_border_color = cluster_colors[hard_prediction]
 
-ax.scatter(
+# Assign this specific point to its own handle
+simulated_scatter = ax.scatter(
     live_x, 
     live_y, 
     live_z, 
@@ -602,9 +603,12 @@ ax.scatter(
     marker='*',                   # Star marker to standout
     s=500,                        # Scaled up visibility
     edgecolors=live_border_color, # Outline matches assigned cluster color
-    linewidths=2.5,
-    zorder=10                     # Ensure it draws on top of background points
+    linewidths=2.5
 )
+
+# FIX: Force Matplotlib to always draw the simulated point last (on top of everything)
+ax.collections.remove(simulated_scatter)
+ax.collections.append(simulated_scatter)
 # -------------------------------------------------------------
 
 ax.set_box_aspect(None, zoom=0.95) 
@@ -629,6 +633,7 @@ ax.legend(handles=legend_handles, loc='upper left', bbox_to_anchor=(0.05, 0.95),
 
 # Render cleanly within the Streamlit interface canvas
 st.pyplot(fig, clear_figure=True)
+
 
 
 
