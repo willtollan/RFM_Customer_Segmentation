@@ -583,10 +583,11 @@ fig = plt.figure(figsize=(10, 10))
 ax = fig.add_subplot(projection='3d')
 
 # Background points matching your original notebook setup
+# Note: Lowering alpha slightly to 0.6 ensures the star can be seen even if deep inside a cluster
 scatter = ax.scatter(df_labeled['MonetaryValue'],
                      df_labeled['Frequency'],
                      df_labeled['Recency'],
-                     c=colors, marker='o')
+                     c=colors, marker='o', alpha=0.6)
 
 # --- Interactive Element: Overlay Simulated User Data Point ---
 live_x = float(user_input_df['MonetaryValue'].iloc[0])
@@ -594,21 +595,21 @@ live_y = float(user_input_df['Frequency'].iloc[0])
 live_z = float(user_input_df['Recency'].iloc[0])
 live_border_color = cluster_colors[hard_prediction]
 
-# Assign this specific point to its own handle
+# Draw the simulated point
 simulated_scatter = ax.scatter(
     live_x, 
     live_y, 
     live_z, 
     c='#facc15',                  # High-visibility gold fill
     marker='*',                   # Star marker to standout
-    s=500,                        # Scaled up visibility
+    s=600,                        # Scaled up slightly more for better visibility
     edgecolors=live_border_color, # Outline matches assigned cluster color
     linewidths=2.5
 )
 
-# FIX: Force Matplotlib to always draw the simulated point last (on top of everything)
-ax.collections.remove(simulated_scatter)
-ax.collections.append(simulated_scatter)
+# FIX: Native Matplotlib 3D layering override that works on Streamlit Cloud
+simulated_scatter.set_zorder(999)
+ax.computed_zorder = False  # Tells the 3D engine to respect explicit z-orders over depth calculations
 # -------------------------------------------------------------
 
 ax.set_box_aspect(None, zoom=0.95) 
