@@ -302,14 +302,14 @@ monetary_value = st.sidebar.number_input(
 frequency = st.sidebar.slider(
     "Frequency (Total Visits)", 
     min_value=1, 
-    max_value=100, 
+    max_value=15, 
     value=1, 
     step=1
 )
 recency = st.sidebar.slider(
     "Recency (Days Since Last Purchase)", 
     min_value=0, 
-    max_value=365, 
+    max_value=400, 
     value=110, 
     step=1
 )
