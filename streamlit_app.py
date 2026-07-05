@@ -638,5 +638,6 @@ ax.set_ylim(bottom=0)
 ax.set_zlim(bottom=0)
 
 # Render cleanly within the Streamlit interface canvas
-st.pyplot(fig, clear_figure=True)
+#st.pyplot(fig, clear_figure=True)
+st.pyplot(fig, clear_figure=True, use_container_width=False)
 
