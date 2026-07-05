@@ -637,7 +637,12 @@ ax.set_xlim(left=0)
 ax.set_ylim(bottom=0)
 ax.set_zlim(bottom=0)
 
-# Render cleanly within the Streamlit interface canvas
-#st.pyplot(fig, clear_figure=True)
-st.pyplot(fig, clear_figure=True, use_container_width=False)
+# --- Streamlit Layout Adjustment: Narrow Column Wrapping ---
+# [1, 2, 1] sets the center column to be twice as wide as the left/right padding blocks
+col_left, col_plot, col_right = st.columns([1, 2, 1])
+
+with col_plot:
+    # Render cleanly within the narrowed middle column
+    st.pyplot(fig, clear_figure=True)
+
 
