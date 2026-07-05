@@ -695,5 +695,55 @@ with col_right_hist:
     st.pyplot(fig_hist, clear_figure=True)
 
 
+# ----------------------------------------------------
+# 8. REAL-TIME UNIVARIATE OUTLIER DETECTION ENGINE
+# ----------------------------------------------------
+
+st.write("---")
+st.subheader("⚠️ Feature Input Sanity Validation (Z-Score)")
+
+# Define standard statistical threshold (3 standard deviations captures 99.7% of normal data)
+Z_THRESHOLD = 3.0
+outlier_messages = []
+
+# Structured package mapping your live inputs to their respective data columns
+features_to_check = [
+    {"name": "Monetary Value", "col": "MonetaryValue", "current_val": live_x},
+    {"name": "Frequency", "col": "Frequency", "current_val": live_y},
+    {"name": "Recency", "col": "Recency", "current_val": live_z}
+]
+
+for item in features_to_check:
+    mean_val = df_labeled[item["col"]].mean()
+    std_val = df_labeled[item["col"]].std()
+    
+    # Safely avoid division-by-zero errors on completely uniform features
+    if std_val > 0:
+        z_score = (item["current_val"] - mean_val) / std_val
+        
+        # Flag any feature exceeding the threshold limits
+        if abs(z_score) > Z_THRESHOLD:
+            direction = "above" if z_score > 0 else "below"
+            outlier_messages.append(
+                f"• **{item['name']}** input is highly unusual "
+                f"({abs(z_score):.1f} standard deviations {direction} the historical mean)."
+            )
+
+# Render validation alerts based on the findings
+if outlier_messages:
+    st.error("🚨 **Extreme Feature Input Detected**")
+    st.markdown(
+        "The current configuration contains parameters that sit outside normal historical baseline boundaries. "
+        "The classification engine may show high variance under these conditions:"
+    )
+    for msg in outlier_messages:
+        st.markdown(msg)
+else:
+    st.success("✅ **Inputs within Normal Operational Range**")
+    st.markdown(
+        "All simulated parameters fall comfortably within expected corporate boundaries. "
+        "Model interpretability plots can be trusted with high statistical confidence."
+    )
+
 
 
