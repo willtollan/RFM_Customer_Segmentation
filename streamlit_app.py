@@ -632,6 +632,11 @@ legend_handles.append(
 
 ax.legend(handles=legend_handles, loc='upper left', bbox_to_anchor=(0.05, 0.95), title="Customer Clusters")
 
+# Force the 3D grid space boundaries to begin exactly at 0
+ax.set_xlim(left=0)
+ax.set_ylim(bottom=0)
+ax.set_zlim(bottom=0)
+
 # Render cleanly within the Streamlit interface canvas
 st.pyplot(fig, clear_figure=True)
 
