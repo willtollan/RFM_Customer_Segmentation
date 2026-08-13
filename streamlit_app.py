@@ -229,7 +229,7 @@ with st.expander('Surrogate Classifier', expanded=False):
     
     cm_col1, cm_col2, cm_col3 = st.columns([1, 2, 1])
     with cm_col2:
-        st.image('images/tuned_RF_confusion_matrix.png', use_column_width=True)
+        st.image('images/tuned_RF_confusion_matrix.png', use_container_width=True)
 
     # --- Random Forest Feature Importances ---
     st.subheader('Random Forest Feature Importances')
@@ -237,7 +237,7 @@ with st.expander('Surrogate Classifier', expanded=False):
     
     cm_col1, cm_col2, cm_col3 = st.columns([1, 2, 1])
     with cm_col2:
-        st.image('images/RF_feature_importances.png', use_column_width=True)
+        st.image('images/RF_feature_importances.png', use_container_width=True)
 
 
 # ----------------------------------------------------
