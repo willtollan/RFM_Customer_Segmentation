@@ -9,7 +9,7 @@ import numpy as np
 st.set_page_config(page_title="Machine Learning App", layout="wide")
 
 st.title('🤖 Machine Learning App')
-st.info('This app processes transaction data, analyzes customer cohorts, and deploys a live customer classification engine.')
+st.info('This app processes transaction data, analyses customer cohorts, and deploys a live customer classification engine.')
 
 # ----------------------------------------------------
 # 1. CACHED DATA & ARTIFACT LOADING FUNCTIONS
@@ -25,7 +25,7 @@ def load_preprocessed_data(file_path):
     return pd.read_csv(file_path)
 
 @st.cache_data
-def load_labeled_data(file_path):
+def load_labelled_data(file_path):
     return pd.read_csv(file_path)
 
 @st.cache_data
@@ -44,20 +44,20 @@ def load_rf_metrics(file_path):
 def load_rf_report(file_path):
     return pd.read_csv(file_path)
 
-# --- Safely Initialize Base Processing Dependencies (Cached) ---
+# Safely Initialise Base Processing Dependencies (Cached)
 try:
     df_preprocessed = load_preprocessed_data('data/preprocessed_data.csv')
-    df_labeled = load_labeled_data('data/preprocessed_labelled_data.csv')
+    df_labelled = load_labeled_data('data/preprocessed_labelled_data.csv')
 except FileNotFoundError as e:
-    st.error(f"Initialization mismatch error: {e}. Please check your repository file paths.")
+    st.error(f"Initialisation mismatch error: {e}. Please check your repository file paths.")
 
 # ----------------------------------------------------
-# 2. DATA INSPECTION WORKSPACE COMPONENT
+# 2. DATA INSPECTION WORKSPACE
 # ----------------------------------------------------
 
 with st.expander('Data Inspection Workspace', expanded=False):
     
-    # --- Raw Data Section ---
+    # Raw Data Section
     st.subheader('Raw Data')
     st.write('This is a preview (first 1000 rows) of the original transaction dataset from the source Excel file:')
     try:
@@ -68,28 +68,28 @@ with st.expander('Data Inspection Workspace', expanded=False):
 
     st.markdown("---") 
 
-    # --- Preprocessed Data Section ---
+    # Preprocessed Data Section
     st.subheader('Preprocessed Data')
     st.write('This is the fully aggregated, cleaned, and outlier-filtered RFM feature dataset:')
     try:
         st.dataframe(df_preprocessed)
         st.metric(label="Total Unique Customers", value=len(df_preprocessed))
     except NameError:
-        st.error("Preprocessed dataframe not initialized.")
+        st.error("Preprocessed dataframe not initialised.")
 
     st.markdown("---")
 
-    # --- Preprocessed Data with Labels Section ---
+    # Preprocessed Data with Labels Section
     st.subheader('Preprocessed Data with Labels')
     st.write('This is the feature dataset including the target label index and label name for classification:')
     try:
-        st.dataframe(df_labeled)
-        st.metric(label="Total Unique Labelled Customers", value=len(df_labeled))
+        st.dataframe(df_labelled)
+        st.metric(label="Total Unique Labelled Customers", value=len(df_labelled))
         
-        # --- Train/Test Split Note ---
-        st.info("💡 **Modeling Note:** Prior to training, an **80% training and 20% testing split** was performed on this dataset. The split utilised **random shuffling** to remove structural order bias and **stratification** to strictly preserve original class balances across subsets.")
+        # Train/Test Split Note
+        st.info("💡 **Modelling Note:** Prior to training, an **80% training and 20% testing split** was performed on this dataset. The split used **random shuffling** to remove structural order bias and **stratification** to strictly preserve original class balances across subsets.")
     except NameError:
-        st.error("Labeled dataframe not initialized.")
+        st.error("Labelled dataframe not initialised.")
 
 # ----------------------------------------------------
 # 3. KMEANS CLUSTERING RESULTS AND VISUALISATIONS
@@ -97,9 +97,9 @@ with st.expander('Data Inspection Workspace', expanded=False):
 
 with st.expander('KMeans Clustering Results and Visualisations', expanded=False):
     
-    # --- Color-Coded Legend Section ---
+    # Color-Coded Legend Section
     st.subheader('Cluster Reference Legend')
-    st.write('Use this color-coded key to identify segments across the visualizations below:')
+    st.write('Use this color-coded key to identify segments across the visualisations below:')
     
     leg_col1, leg_col2, leg_col3, leg_col4 = st.columns(4)
     with leg_col1:
@@ -113,9 +113,9 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
                     
     st.markdown("---")
     
-    # --- KMeans Centroids Section ---
+    # KMeans Centroids Section
     st.subheader('KMeans Centroids')
-    st.write('This table displays the calculated cluster centers (centroids) for each customer segment:')
+    st.write('This table displays the calculated cluster centres (centroids) for each customer segment:')
     try:
         df_centroids = load_centroids_data('data/customer_centroids.csv')
         st.dataframe(df_centroids)
@@ -124,7 +124,7 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
         
     st.markdown("---")
 
-    # --- Elbow Method Section (Large Format Plot) ---
+    # Elbow Method Section (Large Format Plot)
     st.subheader('Elbow Method: Optimal Number of Clusters (K)')
     st.write('Evaluation of Within-Cluster Sum of Squares (WCSS) to determine the mathematically optimal cluster configuration:')
     
@@ -139,7 +139,7 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
     
     # --- 3D Scatter Plot Section (Standard Format Plot) ---
     st.subheader('KMeans Clusters 3D Scatter Plot given Features: Recency, Frequency and Monetary Value')
-    st.write('Visual spatial separation of your customer segments across the three RFM dimensions:')
+    st.write('Visualisation of the KMeans customer segments across the three RFM dimensions:')
     
     col1, col2, col3 = st.columns([1.5, 5, 1.5])
     with col2:
@@ -150,7 +150,7 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
         
     st.markdown("---")
     
-    # --- Boxplot Plots Section (Standard Format Plot) ---
+    # Boxplot Plots Section (Standard Format Plot)
     st.subheader('Cluster Boxplot Plots by Feature')
     st.write('Distribution spread and density of Recency, Frequency, and Monetary Value across each cluster:')
     
@@ -165,9 +165,9 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
 # 4. RANDOM FOREST CLASSIFIER PERFORMANCE METRICS
 # ----------------------------------------------------
 
-with st.expander('Surrogate Classifier', expanded=False):
+with st.expander('Global Surrogate Classifier', expanded=False):
     
-    # --- Model Selection ---
+    # Model Selection
     st.subheader('Cross-Validation Results across Multiple Classifiers')
     st.write('Random Forest Classifier achieved the strongest cross-validation performance')
     
@@ -180,9 +180,9 @@ with st.expander('Surrogate Classifier', expanded=False):
             
     st.markdown("---")
     
-    # --- Random Forest Best Parameters ---
+    # Random Forest Best Parameters
     st.subheader('Random Forest Best Parameters')
-    st.write('The optimal hyperparameters found during the grid search tuning optimization phase (Randomized Cross-Validation Search):')
+    st.write('The optimal hyperparameters found during the tuning optimisation phase (Randomised Cross-Validation Search):')
     
     met_col1, met_col2, met_col3 = st.columns([1.5, 6, 1.5])
     with met_col2:
@@ -194,7 +194,7 @@ with st.expander('Surrogate Classifier', expanded=False):
         
     st.markdown("---")
     
-    # --- Key Metrics Section ---
+    # Key Metrics Section
     st.subheader('Key Metrics')
     st.write('Overall evaluation metrics for the tuned Random Forest classification model:')
     
@@ -208,7 +208,7 @@ with st.expander('Surrogate Classifier', expanded=False):
         
     st.markdown("---")
     
-    # --- Classification Report Section ---
+    # Classification Report Section
     st.subheader('Classification Report')
     st.write('Detailed performance metrics breakdown including precision, recall, and f1-score per cluster target:')
     
@@ -223,17 +223,17 @@ with st.expander('Surrogate Classifier', expanded=False):
         
     st.markdown("---")
     
-    # --- Confusion Matrix Section (Small Format Plot) ---
+    # Confusion Matrix Section
     st.subheader('Confusion Matrix')
-    st.write('Matrix visualising the actual versus predicted classification distributions on test data subsets:')
+    st.write('Matrix visualising the actual versus predicted classification distributions on test data subset:')
     
     cm_col1, cm_col2, cm_col3 = st.columns([1, 2, 1])
     with cm_col2:
         st.image('images/tuned_RF_confusion_matrix.png', use_container_width=True)
 
-    # --- Random Forest Feature Importances ---
+    # Random Forest Feature Importances Section
     st.subheader('Random Forest Feature Importances')
-    st.write('Visualization of how much each feature contributes to the predictive power of the Random Forest model using Mean Decrease in Impurity (MDI) / Gini Importance')
+    st.write('Visualisation of how much each feature contributes to the predictive power of the Random Forest model using Mean Decrease in Impurity (MDI) / Gini Importance')
     
     cm_col1, cm_col2, cm_col3 = st.columns([1, 2, 1])
     with cm_col2:
@@ -244,7 +244,7 @@ with st.expander('Surrogate Classifier', expanded=False):
 # Classification Prediction and SHAP Explainability
 # ----------------------------------------------------
 
-# 1. Page Configuration
+# Page Configuration
 st.set_page_config(page_title="Customer Cluster Explainer", layout="wide")
 st.title("🛍️ Customer Cluster Predictor & SHAP Explainer")
 
@@ -255,21 +255,21 @@ LABELS = {
     3: 'RE-ENGAGE'
 }
 
-# 2. Cached Data & Pretrained Model Loading
+# Cached Data & Pretrained Model Loading
 @st.cache_data
 def load_datasets():
-    # Reads from the "data" folder in your repository
+    # Reads from the "data" folder in the repository
     X_train = pd.read_csv("data/X_train.csv")
     X_test = pd.read_csv("data/X_test.csv")
     return X_train, X_test
 
 @st.cache_resource
 def load_model_and_explainer(X_train):
-    # Reads your custom pretrained model from the "models" folder
+    # Reads the custom pretrained model from the "models" folder
     loaded_model = joblib.load("models/random_forest_model.pkl")
     rf_clf = loaded_model.named_steps['clf']
     
-    # Initialize explainer using background training data for empirical expected values
+    # Initialise explainer using background training data for empirical expected values
     explainer = shap.TreeExplainer(rf_clf, data=X_train)
     return rf_clf, explainer
 
@@ -278,10 +278,10 @@ try:
     X_train, X_test = load_datasets()
     rf_clf, explainer = load_model_and_explainer(X_train)
 except Exception as e:
-    st.error(f"⚠️ Error loading production files. Check repository paths: {e}")
+    st.error(f"Error loading production files. Check repository paths: {e}")
     st.stop()
 
-# --- OPTIMIZED CACHED GLOBAL SHAP ENGINE ---
+# Cashed Global SHAP Engine
 @st.cache_data
 def compute_cached_global_shap(_explainer_engine, _test_df):
     return _explainer_engine(_test_df, check_additivity=False)
@@ -289,7 +289,7 @@ def compute_cached_global_shap(_explainer_engine, _test_df):
 # Pre-calculate full reference matrix for the macro-level view
 global_shap_values = compute_cached_global_shap(explainer, X_test)
 
-# 3. Sidebar Input Elements for Features
+# Sidebar Input Elements for Features
 st.sidebar.header("📥 Input Customer Features")
 
 monetary_value = st.sidebar.number_input(
@@ -322,10 +322,10 @@ user_input_df = pd.DataFrame([{
 }])
 user_input_df = user_input_df[X_test.columns].astype(X_test.dtypes)
 
-# 4. Generate SHAP Values Upfront
+# Generate SHAP Values Upfront
 shap_output = explainer(user_input_df, check_additivity=False)
 
-# Calculate the exact f(x) probability for all 4 classes using SHAP margin outputs
+# Calculate the exact f(x) probability for all 4 classes
 all_classes_probabilities = []
 for class_idx in sorted(LABELS.keys()):
     class_base_value = shap_output.base_values[0, class_idx]
@@ -333,7 +333,7 @@ for class_idx in sorted(LABELS.keys()):
     class_fx_prob = float(class_base_value + class_shap_sum)
     all_classes_probabilities.append(class_fx_prob)
 
-# FIX: Define the prediction dynamically based on the highest probability in the f(x) space
+# Define the prediction dynamically based on the highest probability in the f(x) space
 hard_prediction = int(np.argmax(all_classes_probabilities))
 predicted_label = LABELS[hard_prediction]
 
@@ -360,7 +360,7 @@ styled_prob_df = (
     .apply(highlight_predicted_row, axis=1)
 )
 
-# 5. Display Predictions Dashboard
+# Display Predictions Dashboard
 col_m1, col_m2 = st.columns(2)
 
 with col_m1:
@@ -380,16 +380,16 @@ with col_m2:
 
 st.write("---")
 
-# 6. Display Dual SHAP Plots (Waterfall on left, Beeswarm on right)
+# Display Dual SHAP Plots (Waterfall on left, Beeswarm on right)
 col_plot1, col_plot2 = st.columns(2)
 
 with col_plot1:
     st.subheader("⏱️ Live Local Explanation (Waterfall Plot)")
-    st.caption(f"Visualizing feature transitions pushing this specific client toward the **{predicted_label}** cluster.")
+    st.caption(f"Visualising feature attributions pushing this specific client toward the **{predicted_label}** cluster.")
     
     fig_waterfall, ax_waterfall = plt.subplots(figsize=(8, 4.5))
     
-    # Plot the waterfall diagram using correct structural array slicing from shap_output.
+    # Plot the waterfall diagram using correct structural array slicing from shap_output
     shap.plots.waterfall(
         shap.Explanation(
             values=shap_output.values[0, :, hard_prediction],
@@ -420,7 +420,7 @@ with col_plot2:
 # Cluster Description & Recommended Strategy
 # ----------------------------------------------------
 
-# 7. Dynamic Cluster Description & Strategy Section
+# Dynamic Cluster Description & Strategy Section
 st.write("---")
 st.subheader("📝 Cluster Description & Recommended Strategy")
 
@@ -429,7 +429,7 @@ CLUSTER_INFO = {
     "RETAIN": {
         "emoji": "🔒",
         "description": "Customers who are moderately active and valuable, but not top-tier. They are steady but could drift away if ignored.",
-        "strategy": "Keep them engaged with loyalty points, personalized recommendations, and consistent communication."
+        "strategy": "Keep them engaged with loyalty points, personalised recommendations, and consistent communication."
     },
     "REWARD": {
         "emoji": "🎁",
@@ -459,6 +459,7 @@ st.info(f"💡 Recommended Strategy: {cluster_info.get('strategy', 'No strategy 
 # ----------------------------------------------------
 # 7. Feature Sensitivity Analysis (Altair Dynamic Chart)
 # ----------------------------------------------------
+
 import altair as alt
 
 st.write("---")
@@ -471,7 +472,7 @@ target_feature = st.selectbox(
     options=list(user_input_df.columns)
 )
 
-# Define logical evaluation ranges based on your sidebar limits
+# Define logical evaluation ranges based on the sidebar limits
 if target_feature == 'MonetaryValue':
     min_val, max_val, step_val = 0.0, 50000.0, 500.0
 elif target_feature == 'Frequency':
@@ -492,10 +493,10 @@ try:
     # Ensure correct feature alignment & data types relative to original test splits
     sensitivity_df = sensitivity_df[X_test.columns].astype(X_test.dtypes)
     
-    # 1. Generate SHAP values for the entire sweep matrix
+    # Generate SHAP values for the entire sweep matrix
     sweep_shap_output = explainer(sensitivity_df, check_additivity=False)
     
-    # 2. Extract and sum the base values and SHAP values for all classes
+    # Extract and sum the base values and SHAP values for all classes
     shap_proba_list = []
     for class_idx in sorted(LABELS.keys()):
         class_base_values = sweep_shap_output.base_values[:, class_idx]
@@ -508,26 +509,26 @@ try:
     # Stack array to shape (num_samples, num_classes)
     shap_proba_matrix = np.column_stack(shap_proba_list)
     
-    # 3. Normalize the raw SHAP outputs so they perfectly sum to 100% (0.0 - 1.0)
+    # Normalise the raw SHAP outputs so they perfectly sum to 100% (0.0 - 1.0)
     row_sums = shap_proba_matrix.sum(axis=1, keepdims=True)
-    normalized_shap_matrix = shap_proba_matrix / row_sums
+    normalised_shap_matrix = shap_proba_matrix / row_sums
     
     # Create a DataFrame to hold the results for plotting
-    plot_df = pd.DataFrame(normalized_shap_matrix, columns=[LABELS[i] for i in sorted(LABELS.keys())])
+    plot_df = pd.DataFrame(normalised_shap_matrix, columns=[LABELS[i] for i in sorted(LABELS.keys())])
     plot_df[target_feature] = feature_range
 
-    # Melt data for Altair long-form structure
+    # Reshape data for Altair long-form structure
     melted_df = plot_df.melt(
         id_vars=[target_feature], 
         var_name="Cohort Cluster", 
         value_name="Probability"
     )
 
-    # Allocate specific ratio layout: 3 parts chart, 1 part side narrative panel
+    # Generate specific ratio layout: 3 parts chart, 1 part side narrative panel
     col_chart, col_info = st.columns([3, 1])
     
     with col_chart:
-        # A. Base line visualization for cluster probability trajectories
+        # A. Base line visualisation for cluster probability trajectories
         lines = alt.Chart(melted_df).mark_line(strokeWidth=2.5).encode(
             x=alt.X(f'{target_feature}:Q', title=f"{target_feature} Range"),
             y=alt.Y('Probability:Q', title='Cohort Probability', scale=alt.Scale(domain=[0.0, 1.0])),
@@ -554,8 +555,8 @@ try:
         st.info(f"{target_feature} = {current_val_scalar}")
         st.markdown("""
         **How to read this chart:**
-        * The **dashed red line** shows where your current sidebar customer profile stands.
-        * Watch where lines cross—that indicates the exact threshold where a minor adjustment to an input will flip a customer's primary cohort assignment.
+        * The **dashed red line** shows where your current simulated customer profile stands.
+        * Watch where lines cross — that indicates the exact threshold where an adjustment to an input will flip a customer's primary cohort assignment.
         """)
 
 except Exception as sens_err:
@@ -568,9 +569,9 @@ except Exception as sens_err:
 
 import matplotlib.patches as mpatches
 
-# --- 1. CORE DATA & METRIC STRUCTURING ---
+# Core Data & Metric Structuring
 cluster_colors = {0: '#1f77b4', 1: '#d62728', 2: '#2ca02c', 3: '#ff7f0e'}
-colors = df_labeled['Cluster'].map(cluster_colors)
+colors = df_labelled['Cluster'].map(cluster_colors)
 
 cluster_labels = {
     0: "Cluster 0 (RETAIN)",
@@ -585,13 +586,11 @@ live_y = float(user_input_df['Frequency'].iloc[0])
 live_z = float(user_input_df['Recency'].iloc[0])
 live_border_color = cluster_colors[hard_prediction]
 
-# --- 2. LAYOUT DEFINITION ---
 # Splits screen into 2 equal-width columns to hold the visuals side-by-side
 col_left_3d, col_right_hist = st.columns([1, 1])
 
-# =========================================================================
 # LEFT COLUMN: 3D SCATTER PLOT
-# =========================================================================
+# =================================================================
 with col_left_3d:
     st.subheader("🌐 Customer Space Mapping")
     
@@ -599,9 +598,9 @@ with col_left_3d:
     ax_3d = fig_3d.add_subplot(projection='3d')
 
     # Background points
-    scatter = ax_3d.scatter(df_labeled['MonetaryValue'],
-                            df_labeled['Frequency'],
-                            df_labeled['Recency'],
+    scatter = ax_3d.scatter(df_labelled['MonetaryValue'],
+                            df_labelled['Frequency'],
+                            df_labelled['Recency'],
                             c=colors, marker='o', alpha=0.6)
 
     # Simulated active user node overlay
@@ -614,7 +613,7 @@ with col_left_3d:
         linewidths=2.5
     )
 
-    # Respect manual zorder in 3D canvas
+    # Respect manual z-order in 3D canvas
     simulated_scatter.set_zorder(999)
     ax_3d.computed_zorder = False  
 
@@ -642,14 +641,13 @@ with col_left_3d:
 
     st.pyplot(fig_3d, clear_figure=True)
 
-# =========================================================================
 # RIGHT COLUMN: STACKED FEATURE HISTOGRAMS WITH LIVE USER POINTERS
-# =========================================================================
+# =================================================================
 
 with col_right_hist:
     st.subheader("📊 Profile Feature Distributions")
     
-    # Initialize a multi-axis figure matching the 10x10 scale of the left side
+    # Initialise a multi-axis figure matching the 10x10 scale of the left side
     fig_hist, axes = plt.subplots(3, 1, figsize=(10, 10))
     plt.subplots_adjust(hspace=0.4) # Add buffer room between rows
     
@@ -663,20 +661,20 @@ with col_right_hist:
     for cfg in features_config:
         ax = axes[cfg["idx"]]
         
-        # --- DYNAMIC BINNING ADJUSTMENT ---
+        # Dynamic Binning Adjustment
         # If processing Frequency, force exactly 1 bin per individual discrete integer value
         if cfg["col"] == "Frequency":
-            min_val = int(df_labeled[cfg["col"]].min())
-            max_val = int(df_labeled[cfg["col"]].max())
+            min_val = int(df_labelled[cfg["col"]].min())
+            max_val = int(df_labelled[cfg["col"]].max())
             # Creates edges at half-intervals (e.g., 0.5, 1.5, 2.5) to center integer tick labels perfectly
             hist_bins = np.arange(min_val, max_val + 2) - 0.5
         else:
             # Fallback to standard grouping resolution for continuous fields
             hist_bins = 30
-        # ----------------------------------
+
         
         # Plot distribution matching the current cohort colors using the calculated bins array
-        ax.hist(df_labeled[cfg["col"]], bins=hist_bins, color=live_border_color, alpha=0.6, edgecolor='white')
+        ax.hist(df_labelled[cfg["col"]], bins=hist_bins, color=live_border_color, alpha=0.6, edgecolor='white')
         
         # Dynamic threshold marker tracking user coordinates
         ax.axvline(x=cfg["val"], color='#facc15', linestyle='--', linewidth=3, zorder=5,
@@ -706,7 +704,7 @@ st.subheader("⚠️ Feature Input Sanity Validation (Z-Score)")
 Z_THRESHOLD = 3.0
 outlier_messages = []
 
-# Structured package mapping your live inputs to their respective data columns
+# Mapping the live inputs to their respective data columns
 features_to_check = [
     {"name": "Monetary Value", "col": "MonetaryValue", "current_val": live_x},
     {"name": "Frequency", "col": "Frequency", "current_val": live_y},
@@ -714,8 +712,8 @@ features_to_check = [
 ]
 
 for item in features_to_check:
-    mean_val = df_labeled[item["col"]].mean()
-    std_val = df_labeled[item["col"]].std()
+    mean_val = df_labelled[item["col"]].mean()
+    std_val = df_labelled[item["col"]].std()
     
     # Safely avoid division-by-zero errors on completely uniform features
     if std_val > 0:
