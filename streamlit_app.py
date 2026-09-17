@@ -47,7 +47,7 @@ def load_rf_report(file_path):
 # Safely Initialise Base Processing Dependencies (Cached)
 try:
     df_preprocessed = load_preprocessed_data('data/preprocessed_data.csv')
-    df_labelled = load_labeled_data('data/preprocessed_labelled_data.csv')
+    df_labelled = load_labelled_data('data/preprocessed_labelled_data.csv')
 except FileNotFoundError as e:
     st.error(f"Initialisation mismatch error: {e}. Please check your repository file paths.")
 
