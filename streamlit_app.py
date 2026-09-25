@@ -239,7 +239,6 @@ with st.expander('Surrogate Classifier', expanded=False):
     with cm_col2:
         st.image('images/RF_feature_importances.png', use_container_width=True)
 
-
 # ----------------------------------------------------
 # Classification Prediction and SHAP Explainability
 # ----------------------------------------------------
@@ -263,15 +262,26 @@ def load_datasets():
     X_test = pd.read_csv("data/X_test_updated.csv")
     return X_train, X_test
 
+#@st.cache_resource
+#def load_model_and_explainer(X_train):
+#    # Reads your custom pretrained model from the "models" folder
+#    loaded_model = joblib.load("models/random_forest_model_updated.pkl")
+#    rf_clf = loaded_model.named_steps['clf']
+    
+#    # Initialize explainer using background training data for empirical expected values
+#    explainer = shap.TreeExplainer(rf_clf, data=X_train)
+#    return rf_clf, explainer
+
 @st.cache_resource
 def load_model_and_explainer(X_train):
     # Reads your custom pretrained model from the "models" folder
     loaded_model = joblib.load("models/random_forest_model_updated.pkl")
     rf_clf = loaded_model.named_steps['clf']
     
-    # Initialize explainer using background training data for empirical expected values
-    explainer = shap.TreeExplainer(rf_clf, data=X_train)
+    # FIX: Disable additivity verification to prevent internal write/permission exceptions on deployment containers
+    explainer = shap.TreeExplainer(rf_clf, data=X_train, check_additivity=False)
     return rf_clf, explainer
+
 
 # Load production components
 try:
