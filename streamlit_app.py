@@ -30,7 +30,7 @@ def load_labelled_data(file_path):
 
 @st.cache_data
 def load_centroids_data(file_path):
-    return pd.read_csv(`file_path)
+    return pd.read_csv(file_path)
 
 @st.cache_data
 def load_rf_best_params(file_path):
