@@ -44,7 +44,7 @@ def load_rf_metrics(file_path):
 def load_rf_report(file_path):
     return pd.read_csv(file_path)
 
-# Safely Initialise Base Processing Dependencies (Cached)
+# Safely initialise base processing dependencies (cached)
 try:
     df_preprocessed = load_preprocessed_data('data/preprocessed_data_updated.csv')
     df_labelled = load_labelled_data('data/preprocessed_labelled_data_updated.csv')
@@ -68,7 +68,7 @@ with st.expander('Data Inspection Workspace', expanded=False):
 
     st.markdown('---') 
 
-    # Preprocessed Data Section
+    # Preprocessed data section
     st.subheader('Preprocessed Data')
     st.write('This is the fully aggregated, cleaned, and outlier-filtered RFM feature dataset:')
     try:
@@ -79,14 +79,14 @@ with st.expander('Data Inspection Workspace', expanded=False):
 
     st.markdown('---')
 
-    # Preprocessed Data with Labels Section
+    # Preprocessed data with labels section
     st.subheader('Preprocessed Data with Labels')
     st.write('This is the feature dataset including the target label index and label name for classification:')
     try:
         st.dataframe(df_labelled)
         st.metric(label='Total Unique Labelled Customers', value=len(df_labelled))
         
-        # Train/Test Split Note
+        # Train/Test split note
         st.info('💡 **Modelling Note:** Prior to training, an **80% training and 20% testing split** was performed on this dataset. The split used **random shuffling** to remove structural order bias and **stratification** to strictly preserve original class balances across subsets.')
     except NameError:
         st.error('Labelled dataframe not initialised.')
@@ -97,7 +97,7 @@ with st.expander('Data Inspection Workspace', expanded=False):
     
 with st.expander('K-Means Clustering Results and Visualisations', expanded=False):
     
-    # Color-Coded Legend Section
+    # Color-coded legend section
     st.subheader('Cluster Reference Legend')
     st.write('Use this color-coded key to identify segments across the visualisations below:')
     
@@ -113,7 +113,7 @@ with st.expander('K-Means Clustering Results and Visualisations', expanded=False
                     
     st.markdown('---')
     
-    # K-Means Centroids Section
+    # K-Means centroids section
     st.subheader('K-Means Centroids')
     st.write('This table displays the calculated cluster centers (centroids) for each customer segment:')
     try:
@@ -124,7 +124,7 @@ with st.expander('K-Means Clustering Results and Visualisations', expanded=False
         
     st.markdown('---')
 
-    # Elbow Method and Silhouette Score Section
+    # Elbow Method and Silhouette Score section
     st.subheader('Optimal Number of Clusters (K) Diagnostics')
     st.write('Evaluation of Within-Cluster Sum of Squares (WCSS) and Silhouette scores to determine the mathematically optimal cluster configuration:')
     
@@ -137,7 +137,7 @@ with st.expander('K-Means Clustering Results and Visualisations', expanded=False
         
     st.markdown('---')
     
-    # 3D K-Means Clusters Scatter Plot Section
+    # 3D K-Means clusters scatter plot section
     st.subheader('K-Means Clusters 3D Scatter Plot in 3-Dimensional RFM Feature Space')
     st.write('Visual spatial separation of K-Means customer segments across the three RFM dimensions:')
     
@@ -150,7 +150,7 @@ with st.expander('K-Means Clustering Results and Visualisations', expanded=False
         
     st.markdown('---')
     
-    # Boxplot Plots Section
+    # Boxplot plots section
     st.subheader('Cluster Boxplot Plots by Feature')
     st.write('Distribution spread and density of Recency, Frequency, and Monetary Value across each cluster:')
     
@@ -167,7 +167,7 @@ with st.expander('K-Means Clustering Results and Visualisations', expanded=False
 
 with st.expander('Global Surrogate Modelling Benchmarking and Model Selection', expanded=False):
     
-    # Model Selection
+    # Model selection
     st.subheader('Cross-Validation Results across Multiple Classifiers')
     st.write('Random Forest Classifier achieved the strongest cross-validation accuracy')
     
@@ -180,7 +180,7 @@ with st.expander('Global Surrogate Modelling Benchmarking and Model Selection', 
             
     st.markdown('---')
     
-    # Random Forest Best Parameters
+    # Random Forest best parameters
     st.subheader('Random Forest Best Parameters')
     st.write('The optimal hyperparameters found during the grid search tuning optimisation phase (Randomised Cross-Validation Search):')
     
@@ -194,7 +194,7 @@ with st.expander('Global Surrogate Modelling Benchmarking and Model Selection', 
         
     st.markdown('---')
     
-    # Key Metrics Section
+    # Key metrics section
     st.subheader('Key Metrics')
     st.write('Overall evaluation metrics for the tuned Random Forest classification model:')
     
@@ -208,7 +208,7 @@ with st.expander('Global Surrogate Modelling Benchmarking and Model Selection', 
         
     st.markdown('---')
     
-    # Classification Report Section
+    # Classification report section
     st.subheader('Classification Report')
     st.write('Detailed performance metrics breakdown including precision, recall, and f1-score per cluster target:')
     
@@ -223,7 +223,7 @@ with st.expander('Global Surrogate Modelling Benchmarking and Model Selection', 
         
     st.markdown('---')
     
-    # Confusion Matrix Section
+    # Confusion matrix section
     st.subheader('Confusion Matrix')
     st.write('Matrix visualising the actual versus predicted classification distributions on test data subsets:')
     
@@ -231,7 +231,7 @@ with st.expander('Global Surrogate Modelling Benchmarking and Model Selection', 
     with cm_col2:
         st.image('images/tuned_RF_confusion_matrix.png', use_container_width=True)
 
-    # Random Forest Feature Importances
+    # Random Forest feature importances
     st.subheader('Random Forest Feature Importances')
     st.write('Visualisation of how much each feature contributes to the predictive power of the Random Forest model using Mean Decrease in Impurity (MDI) / Gini Importance')
     
@@ -243,7 +243,7 @@ with st.expander('Global Surrogate Modelling Benchmarking and Model Selection', 
 # Classification Prediction and SHAP Explainability
 # ----------------------------------------------------
 
-# Page Configuration
+# Page configuration
 st.title('🛍️ Customer Cluster Predictor & SHAP Explainer')
 
 LABELS = {
@@ -253,7 +253,7 @@ LABELS = {
     3: 'RETAIN'
 }
 
-# Cached Data & Pretrained Model Loading
+# Cached data & pretrained model loading
 @st.cache_data
 def load_datasets():
     # Reads from the 'data' folder
@@ -279,7 +279,7 @@ except Exception as e:
     st.error(f'⚠️ Error loading production files. Check repository paths: {e}')
     st.stop()
 
-# Optimised Cached Global SHAP Engine
+# Optimised cached global SHAP engine
 @st.cache_data
 def compute_cached_global_shap(_explainer_engine, _test_df):
     return _explainer_engine(_test_df, check_additivity=False)
@@ -287,7 +287,7 @@ def compute_cached_global_shap(_explainer_engine, _test_df):
 # Pre-calculate full reference matrix for the macro-level view
 global_shap_values = compute_cached_global_shap(explainer, X_test)
 
-# Sidebar Input Elements for Features
+# Sidebar input elements for features
 st.sidebar.header('📥 Input Customer Features')
 
 monetary_value = st.sidebar.number_input(
@@ -301,7 +301,7 @@ frequency = st.sidebar.slider(
     'Frequency (Total Visits)', 
     min_value=1, 
     max_value=30, 
-    value=10, 
+    value=9, 
     step=1
 )
 recency = st.sidebar.slider(
@@ -418,7 +418,7 @@ with col_plot2:
 # Cluster Description & Recommended Strategy
 # ----------------------------------------------------
 
-# Dynamic Cluster Description & Strategy Section
+# Dynamic cluster description & strategy section
 st.write('---')
 st.subheader('📝 Cluster Description & Recommended Strategy')
 
