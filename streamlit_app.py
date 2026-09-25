@@ -279,7 +279,7 @@ def load_model_and_explainer(X_train):
     rf_clf = loaded_model.named_steps['clf']
     
     # FIX: Disable additivity verification to prevent internal write/permission exceptions on deployment containers
-    explainer = shap.TreeExplainer(rf_clf, data=X_train, check_additivity=False)
+    explainer = shap.TreeExplainer(rf_clf, data=X_train)
     return rf_clf, explainer
 
 
