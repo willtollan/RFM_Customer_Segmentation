@@ -66,7 +66,7 @@ with st.expander('Data Inspection Workspace', expanded=False):
     except FileNotFoundError:
         st.error("Could not find 'data/online_retail_II.xlsx'.")
 
-    st.markdown("---") 
+    st.markdown('---') 
 
     # Preprocessed Data Section
     st.subheader('Preprocessed Data')
@@ -111,7 +111,7 @@ with st.expander('K-Means Clustering Results and Visualisations', expanded=False
     with leg_col4:
         st.markdown('<div style="padding:10px; border-left: 5px solid #1f77b4; background-color: rgba(31, 119, 180, 0.1); border-radius: 4px;"><strong>Cluster 3: RETAIN</strong><br><span style="color:#1f77b4; font-weight:bold;">🔵 Blue Segment</span></div>', unsafe_allow_html=True)
                     
-    st.markdown("---")
+    st.markdown('---')
     
     # K-Means Centroids Section
     st.subheader('K-Means Centroids')
