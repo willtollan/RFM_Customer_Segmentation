@@ -4,7 +4,6 @@ import joblib
 import shap
 import matplotlib.pyplot as plt
 import numpy as np
-import os
 
 # Configure layout to fit wide data tables comfortably
 st.set_page_config(page_title="Machine Learning App", layout="wide")
@@ -244,8 +243,9 @@ with st.expander('Global Surrogate Classifier', expanded=False):
 # Classification Prediction and SHAP Explainability
 # ----------------------------------------------------
 
-# Page Configuration
-#st.set_page_config(page_title="Customer Cluster Explainer", layout="wide")  
+# (Crucial: Do not call st.set_page_config here as it was already declared at the top of Section 1)
+import os
+
 st.title("🛍️ Customer Cluster Predictor & SHAP Explainer")
 
 LABELS = {
@@ -255,17 +255,10 @@ LABELS = {
     3: 'RETAIN'
 }
 
-# Cached Data & Pretrained Model Loading
-#@st.cache_data
-#def load_datasets():
-#    # Reads from the "data" folder in the repository
-#    X_train = pd.read_csv("data/X_train_updated.csv")
-#    X_test = pd.read_csv("data/X_test_updated.csv")
-#    return X_train, X_test
-
+# Cached Data & Pretrained Model Loading with Absolute Path Resolution
 @st.cache_data
 def load_datasets():
-    # Resolve the absolute path to bypass Streamlit Cloud runtime permission limits
+    # Dynamically resolve directory path to bypass write-restricted containers on Streamlit Cloud
     base_dir = os.path.dirname(os.path.abspath(__file__))
     X_train_path = os.path.join(base_dir, "data", "X_train_updated.csv")
     X_test_path = os.path.join(base_dir, "data", "X_test_updated.csv")
@@ -274,35 +267,13 @@ def load_datasets():
     X_test = pd.read_csv(X_test_path)
     return X_train, X_test
 
-#@st.cache_resource
-#def load_model_and_explainer(X_train):
-#    # Reads the custom pretrained model from the "models" folder
-#    loaded_model = joblib.load("models/random_forest_model_updated.pkl")
-#    rf_clf = loaded_model.named_steps['clf']
-#    
-#    # Initialise explainer using background training data for empirical expected values
-#    explainer = shap.TreeExplainer(rf_clf, data=X_train)
-#    return rf_clf, explainer
-
-@st.cache_resource
-#def load_model_and_explainer(X_train):
-#    # Forcing an explicit read-binary context manager ('rb') unlocks OS permissions inside cloud environments
-#    with open("models/random_forest_model_updated.pkl", "rb") as model_file:
-#        loaded_model = joblib.load(model_file)
-#    
-#    rf_clf = loaded_model.named_steps['clf']
-#
-#    # Initialise explainer using background training data for empirical expected values
-#    explainer = shap.TreeExplainer(rf_clf, data=X_train)
-#    return rf_clf, explainer
-
 @st.cache_resource
 def load_model_and_explainer(X_train):
-    # Resolve absolute path to bypass System Error 13 permissions constraints
+    # Dynamically resolve model path to prevent System Error 13 permission blocks
     base_dir = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(base_dir, "models", "random_forest_model_updated.pkl")
     
-    # Using explicit read-binary context via resolved paths forces the OS layer to grant read access
+    # Enforcing explicit read-binary mode ('rb') via dynamic paths forces the OS layer to grant read access
     with open(model_path, "rb") as model_file:
         loaded_model = joblib.load(model_file)
     
@@ -312,7 +283,7 @@ def load_model_and_explainer(X_train):
     explainer = shap.TreeExplainer(rf_clf, data=X_train)
     return rf_clf, explainer
 
-# Load production components
+# Load production components cleanly
 try:
     X_train, X_test = load_datasets()
     rf_clf, explainer = load_model_and_explainer(X_train)
@@ -320,7 +291,7 @@ except Exception as e:
     st.error(f"Error loading production files. Check repository paths: {e}")
     st.stop()
 
-# Cashed Global SHAP Engine
+# Cached Global SHAP Engine
 @st.cache_data
 def compute_cached_global_shap(_explainer_engine, _test_df):
     return _explainer_engine(_test_df, check_additivity=False)
