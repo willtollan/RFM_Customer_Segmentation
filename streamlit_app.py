@@ -64,7 +64,7 @@ with st.expander('Data Inspection Workspace', expanded=False):
         df_raw = load_raw_data('data/online_retail_II.xlsx')
         st.dataframe(df_raw)
     except FileNotFoundError:
-        st.error('Could not find 'data/online_retail_II.xlsx'.')
+        st.error("Could not find 'data/online_retail_II.xlsx'.")
 
     st.markdown("---") 
 
