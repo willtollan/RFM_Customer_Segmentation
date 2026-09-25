@@ -262,12 +262,24 @@ def load_datasets():
     X_test = pd.read_csv("data/X_test_updated.csv")
     return X_train, X_test
 
+#@st.cache_resource
+#def load_model_and_explainer(X_train):
+#    # Reads the custom pretrained model from the "models" folder
+#    loaded_model = joblib.load("models/random_forest_model_updated.pkl")
+#    rf_clf = loaded_model.named_steps['clf']
+#    
+#    # Initialise explainer using background training data for empirical expected values
+#    explainer = shap.TreeExplainer(rf_clf, data=X_train)
+#    return rf_clf, explainer
+
 @st.cache_resource
 def load_model_and_explainer(X_train):
-    # Reads the custom pretrained model from the "models" folder
-    loaded_model = joblib.load("models/random_forest_model_updated.pkl")
-    rf_clf = loaded_model.named_steps['clf']
+    # Forcing an explicit read-binary context manager ('rb') unlocks OS permissions inside cloud environments
+    with open("models/random_forest_model_updated.pkl", "rb") as model_file:
+        loaded_model = joblib.load(model_file)
     
+    rf_clf = loaded_model.named_steps['clf']
+
     # Initialise explainer using background training data for empirical expected values
     explainer = shap.TreeExplainer(rf_clf, data=X_train)
     return rf_clf, explainer
