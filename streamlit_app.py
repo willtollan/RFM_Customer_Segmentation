@@ -95,21 +95,39 @@ with st.expander('Data Inspection Workspace', expanded=False):
 # 3. KMEANS CLUSTERING RESULTS AND VISUALISATIONS
 # ----------------------------------------------------
 
+#with st.expander('KMeans Clustering Results and Visualisations', expanded=False):
+#    
+#    # --- Color-Coded Legend Section ---
+#    st.subheader('Cluster Reference Legend')
+#    st.write('Use this color-coded key to identify segments across the visualizations below:')
+#    
+#    leg_col1, leg_col2, leg_col3, leg_col4 = st.columns(4)
+#    with leg_col1:
+#        st.markdown('<div style="padding:10px; border-left: 5px solid #1f77b4; background-color: rgba(31, 119, 180, 0.1); border-radius: 4px;"><strong>Cluster 0: Retain</strong><br><span style="color:#1f77b4; font-weight:bold;">🔵 Blue Segment</span></div>', unsafe_allow_html=True)
+#    with leg_col2:
+#        st.markdown('<div style="padding:10px; border-left: 5px solid #d62728; background-color: rgba(214, 39, 40, 0.1); border-radius: 4px;"><strong>Cluster 1: Reward</strong><br><span style="color:#d62728; font-weight:bold;">🔴 Red Segment</span></div>', unsafe_allow_html=True)
+#    with leg_col3:
+#        st.markdown('<div style="padding:10px; border-left: 5px solid #2ca02c; background-color: rgba(44, 160, 44, 0.1); border-radius: 4px;"><strong>Cluster 2: Nurture</strong><br><span style="color:#2ca02c; font-weight:bold;">🟢 Green Segment</span></div>', unsafe_allow_html=True)
+#    with leg_col4:
+#        st.markdown('<div style="padding:10px; border-left: 5px solid #ff7f0e; background-color: rgba(255, 127, 14, 0.1); border-radius: 4px;"><strong>Cluster 3: Re-Engage</strong><br><span style="color:#ff7f0e; font-weight:bold;">🟠 Orange Segment</span></div>', unsafe_allow_html=True)
+#                    
+#    st.markdown("---")
+    
 with st.expander('KMeans Clustering Results and Visualisations', expanded=False):
     
-    # --- Color-Coded Legend Section ---
+    # Color-Coded Legend Section (Completely Aligned with Updated Notebook Mappings)
     st.subheader('Cluster Reference Legend')
-    st.write('Use this color-coded key to identify segments across the visualizations below:')
+    st.write('Use this color-coded key to identify segments across the visualisations below:')
     
     leg_col1, leg_col2, leg_col3, leg_col4 = st.columns(4)
     with leg_col1:
-        st.markdown('<div style="padding:10px; border-left: 5px solid #1f77b4; background-color: rgba(31, 119, 180, 0.1); border-radius: 4px;"><strong>Cluster 0: Retain</strong><br><span style="color:#1f77b4; font-weight:bold;">🔵 Blue Segment</span></div>', unsafe_allow_html=True)
+        st.markdown('<div style="padding:10px; border-left: 5px solid #ff7f0e; background-color: rgba(255, 127, 14, 0.1); border-radius: 4px;"><strong>Cluster 0: RE-ENGAGE</strong><br><span style="color:#ff7f0e; font-weight:bold;">🟠 Orange Segment</span></div>', unsafe_allow_html=True)
     with leg_col2:
-        st.markdown('<div style="padding:10px; border-left: 5px solid #d62728; background-color: rgba(214, 39, 40, 0.1); border-radius: 4px;"><strong>Cluster 1: Reward</strong><br><span style="color:#d62728; font-weight:bold;">🔴 Red Segment</span></div>', unsafe_allow_html=True)
+        st.markdown('<div style="padding:10px; border-left: 5px solid #2ca02c; background-color: rgba(44, 160, 44, 0.1); border-radius: 4px;"><strong>Cluster 1: NURTURE</strong><br><span style="color:#2ca02c; font-weight:bold;">🟢 Green Segment</span></div>', unsafe_allow_html=True)
     with leg_col3:
-        st.markdown('<div style="padding:10px; border-left: 5px solid #2ca02c; background-color: rgba(44, 160, 44, 0.1); border-radius: 4px;"><strong>Cluster 2: Nurture</strong><br><span style="color:#2ca02c; font-weight:bold;">🟢 Green Segment</span></div>', unsafe_allow_html=True)
+        st.markdown('<div style="padding:10px; border-left: 5px solid #d62728; background-color: rgba(214, 39, 40, 0.1); border-radius: 4px;"><strong>Cluster 2: REWARD</strong><br><span style="color:#d62728; font-weight:bold;">🔴 Red Segment</span></div>', unsafe_allow_html=True)
     with leg_col4:
-        st.markdown('<div style="padding:10px; border-left: 5px solid #ff7f0e; background-color: rgba(255, 127, 14, 0.1); border-radius: 4px;"><strong>Cluster 3: Re-Engage</strong><br><span style="color:#ff7f0e; font-weight:bold;">🟠 Orange Segment</span></div>', unsafe_allow_html=True)
+        st.markdown('<div style="padding:10px; border-left: 5px solid #1f77b4; background-color: rgba(31, 119, 180, 0.1); border-radius: 4px;"><strong>Cluster 3: RETAIN</strong><br><span style="color:#1f77b4; font-weight:bold;">🔵 Blue Segment</span></div>', unsafe_allow_html=True)
                     
     st.markdown("---")
     
@@ -247,11 +265,18 @@ with st.expander('Surrogate Classifier', expanded=False):
 #st.set_page_config(page_title="Customer Cluster Explainer", layout="wide")
 st.title("🛍️ Customer Cluster Predictor & SHAP Explainer")
 
+#LABELS = {
+#    0: 'RETAIN',
+#    1: 'REWARD',
+#    2: 'NURTURE',
+#    3: 'RE-ENGAGE'
+#}
+
 LABELS = {
-    0: 'RETAIN',
-    1: 'REWARD',
-    2: 'NURTURE',
-    3: 'RE-ENGAGE'
+    0: 'RE-ENGAGE',
+    1: 'NURTURE',
+    2: 'REWARD',
+    3: 'RETAIN'
 }
 
 # 2. Cached Data & Pretrained Model Loading
@@ -278,31 +303,30 @@ def load_model_and_explainer(X_train):
     loaded_model = joblib.load("models/random_forest_model.pkl")
     rf_clf = loaded_model.named_steps['clf']
     
-    # FIX: Disable additivity verification to prevent internal write/permission exceptions on deployment containers
+    # Initialize explainer using background training data for empirical expected values
     explainer = shap.TreeExplainer(rf_clf, data=X_train)
     return rf_clf, explainer
-
-
-# Load production components
-#try:
-#    X_train, X_test = load_datasets()
-#    rf_clf, explainer = load_model_and_explainer(X_train)
-#except Exception as e:
-#    st.error(f"⚠️ Error loading production files. Check repository paths: {e}")
-#    st.stop()
 
 # Load production components
 try:
     X_train, X_test = load_datasets()
     rf_clf, explainer = load_model_and_explainer(X_train)
 except Exception as e:
-    # ENHANCED DIAGNOSTIC: This prints the exact error class name and the full message
-    st.error(f"⚠️ Error loading production files. Type: {type(e).__name__} | Message: {e}")
-    
-    # This will print the complete stack trace right on your dashboard screen so we can see the exact line
-    import traceback
-    st.code(traceback.format_exc())
+    st.error(f"⚠️ Error loading production files. Check repository paths: {e}")
     st.stop()
+
+# Load production components
+#try:
+#    X_train, X_test = load_datasets()
+#    rf_clf, explainer = load_model_and_explainer(X_train)
+#except Exception as e:
+#    # ENHANCED DIAGNOSTIC: This prints the exact error class name and the full message
+#    st.error(f"⚠️ Error loading production files. Type: {type(e).__name__} | Message: {e}")
+#    
+#    # This will print the complete stack trace right on your dashboard screen so we can see the exact line
+#    import traceback
+#    st.code(traceback.format_exc())
+#    st.stop()
 
 # --- OPTIMIZED CACHED GLOBAL SHAP ENGINE ---
 @st.cache_data
@@ -592,14 +616,23 @@ except Exception as sens_err:
 import matplotlib.patches as mpatches
 
 # --- 1. CORE DATA & METRIC STRUCTURING ---
-cluster_colors = {0: '#1f77b4', 1: '#d62728', 2: '#2ca02c', 3: '#ff7f0e'}
+#cluster_colors = {0: '#1f77b4', 1: '#d62728', 2: '#2ca02c', 3: '#ff7f0e'}
+cluster_colors = {0: '#ff7f0e', 1: '#2ca02c', 2: '#d62728', 3: '#1f77b4'}
+
 colors = df_labeled['Cluster'].map(cluster_colors)
 
+#cluster_labels = {
+ #   0: "Cluster 0 (RETAIN)",
+ #   1: "Cluster 1 (REWARD)",
+ #   2: "Cluster 2 (NURTURE)",
+ #   3: "Cluster 3 (RE-ENGAGE)"
+#}
+
 cluster_labels = {
-    0: "Cluster 0 (RETAIN)",
-    1: "Cluster 1 (REWARD)",
-    2: "Cluster 2 (NURTURE)",
-    3: "Cluster 3 (RE-ENGAGE)"
+    0: "Cluster 0 (RE-ENGAGE)",
+    1: "Cluster 1 (NURTURE)",
+    2: "Cluster 2 (REWARD)",
+    3: "Cluster 3 (RETAIN)"
 }
 
 # Real-time user slider inputs extracted
