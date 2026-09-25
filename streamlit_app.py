@@ -6,10 +6,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 # Configure layout to fit wide data tables comfortably
-st.set_page_config(page_title="Machine Learning App", layout="wide")
+st.set_page_config(page_title='Machine Learning App', layout='wide')
 
 st.title('🤖 Machine Learning App')
-st.info('This app processes transaction data, analyzes customer cohorts, and deploys a live customer classification engine.')
+st.info('This app processes transaction data, analyses customer cohorts, and deploys a live customer classification engine.')
 
 # ----------------------------------------------------
 # 1. CACHED DATA & ARTIFACT LOADING FUNCTIONS
@@ -25,12 +25,12 @@ def load_preprocessed_data(file_path):
     return pd.read_csv(file_path)
 
 @st.cache_data
-def load_labeled_data(file_path):
+def load_labelled_data(file_path):
     return pd.read_csv(file_path)
 
 @st.cache_data
 def load_centroids_data(file_path):
-    return pd.read_csv(file_path)
+    return pd.read_csv(`file_path)
 
 @st.cache_data
 def load_rf_best_params(file_path):
@@ -44,12 +44,12 @@ def load_rf_metrics(file_path):
 def load_rf_report(file_path):
     return pd.read_csv(file_path)
 
-# --- Safely Initialize Base Processing Dependencies (Cached) ---
+# Safely Initialise Base Processing Dependencies (Cached)
 try:
     df_preprocessed = load_preprocessed_data('data/preprocessed_data_updated.csv')
-    df_labeled = load_labeled_data('data/preprocessed_labelled_data_updated.csv')
+    df_labelled = load_labelled_data('data/preprocessed_labelled_data_updated.csv')
 except FileNotFoundError as e:
-    st.error(f"Initialisation mismatch error: {e}. Please check your repository file paths.")
+    st.error(f'Initialisation mismatch error: {e}. Please check your repository file paths.')
 
 # ----------------------------------------------------
 # 2. DATA INSPECTION WORKSPACE COMPONENT
@@ -57,47 +57,47 @@ except FileNotFoundError as e:
 
 with st.expander('Data Inspection Workspace', expanded=False):
     
-    # --- Raw Data Section ---
+    # Raw Data Section
     st.subheader('Raw Data')
-    st.write('This is a preview (first 1000 rows) of the original transaction dataset from the source Excel file:')
+    st.write('This is a preview (first 1000 rows) of the original online_retail_II transaction dataset:')
     try:
         df_raw = load_raw_data('data/online_retail_II.xlsx')
         st.dataframe(df_raw)
     except FileNotFoundError:
-        st.error("Could not find 'data/online_retail_II.xlsx'.")
+        st.error('Could not find 'data/online_retail_II.xlsx'.')
 
     st.markdown("---") 
 
-    # --- Preprocessed Data Section ---
+    # Preprocessed Data Section
     st.subheader('Preprocessed Data')
     st.write('This is the fully aggregated, cleaned, and outlier-filtered RFM feature dataset:')
     try:
         st.dataframe(df_preprocessed)
-        st.metric(label="Total Unique Customers", value=len(df_preprocessed))
+        st.metric(label='Total Unique Customers', value=len(df_preprocessed))
     except NameError:
-        st.error("Preprocessed dataframe not initialized.")
+        st.error('Preprocessed dataframe not initialised.')
 
-    st.markdown("---")
+    st.markdown('---')
 
-    # --- Preprocessed Data with Labels Section ---
+    # Preprocessed Data with Labels Section
     st.subheader('Preprocessed Data with Labels')
     st.write('This is the feature dataset including the target label index and label name for classification:')
     try:
-        st.dataframe(df_labeled)
-        st.metric(label="Total Unique Labelled Customers", value=len(df_labeled))
+        st.dataframe(df_labelled)
+        st.metric(label='Total Unique Labelled Customers', value=len(df_labelled))
         
-        # --- Train/Test Split Note ---
-        st.info("💡 **Modeling Note:** Prior to training, an **80% training and 20% testing split** was performed on this dataset. The split utilised **random shuffling** to remove structural order bias and **stratification** to strictly preserve original class balances across subsets.")
+        # Train/Test Split Note
+        st.info('💡 **Modelling Note:** Prior to training, an **80% training and 20% testing split** was performed on this dataset. The split used **random shuffling** to remove structural order bias and **stratification** to strictly preserve original class balances across subsets.')
     except NameError:
-        st.error("Labeled dataframe not initialized.")
+        st.error('Labelled dataframe not initialised.')
 
 # ----------------------------------------------------
 # 3. KMEANS CLUSTERING RESULTS AND VISUALISATIONS
 # ----------------------------------------------------
     
-with st.expander('KMeans Clustering Results and Visualisations', expanded=False):
+with st.expander('K-Means Clustering Results and Visualisations', expanded=False):
     
-    # Color-Coded Legend Section (Completely Aligned with Updated Notebook Mappings)
+    # Color-Coded Legend Section
     st.subheader('Cluster Reference Legend')
     st.write('Use this color-coded key to identify segments across the visualisations below:')
     
@@ -113,8 +113,8 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
                     
     st.markdown("---")
     
-    # --- KMeans Centroids Section ---
-    st.subheader('KMeans Centroids')
+    # K-Means Centroids Section
+    st.subheader('K-Means Centroids')
     st.write('This table displays the calculated cluster centers (centroids) for each customer segment:')
     try:
         df_centroids = load_centroids_data('data/customer_centroids_updated.csv')
@@ -122,11 +122,11 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
     except FileNotFoundError:
         st.error("Could not find 'data/customer_centroids_updated.csv'.")
         
-    st.markdown("---")
+    st.markdown('---')
 
-    # --- Elbow Method Section (Large Format Plot) ---
-    st.subheader('Elbow Method: Optimal Number of Clusters (K)')
-    st.write('Evaluation of Within-Cluster Sum of Squares (WCSS) to determine the mathematically optimal cluster configuration:')
+    # Elbow Method and Silhouette Score Section
+    st.subheader('Optimal Number of Clusters (K) Diagnostics')
+    st.write('Evaluation of Within-Cluster Sum of Squares (WCSS) and Silhouette scores to determine the mathematically optimal cluster configuration:')
     
     elbow_col1, elbow_col2, elbow_col3 = st.columns([0.5, 9, 0.5])
     with elbow_col2:
@@ -135,11 +135,11 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
         except FileNotFoundError:
             st.error("Could not find 'images/optimal_K_elbow_method.png'.")
         
-    st.markdown("---")
+    st.markdown('---')
     
-    # --- 3D Scatter Plot Section (Standard Format Plot) ---
-    st.subheader('KMeans Clusters 3D Scatter Plot given Features: Recency, Frequency and Monetary Value')
-    st.write('Visual spatial separation of your customer segments across the three RFM dimensions:')
+    # 3D K-Means Clusters Scatter Plot Section
+    st.subheader('K-Means Clusters 3D Scatter Plot in 3-Dimensional RFM Feature Space')
+    st.write('Visual spatial separation of K-Means customer segments across the three RFM dimensions:')
     
     col1, col2, col3 = st.columns([1.5, 5, 1.5])
     with col2:
@@ -148,9 +148,9 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
         except FileNotFoundError:
             st.error("Could not find 'images/KMeans_clusters.png'.")
         
-    st.markdown("---")
+    st.markdown('---')
     
-    # --- Boxplot Plots Section (Standard Format Plot) ---
+    # Boxplot Plots Section
     st.subheader('Cluster Boxplot Plots by Feature')
     st.write('Distribution spread and density of Recency, Frequency, and Monetary Value across each cluster:')
     
@@ -165,11 +165,11 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
 # 4. RANDOM FOREST CLASSIFIER PERFORMANCE METRICS
 # ----------------------------------------------------
 
-with st.expander('Surrogate Classifier', expanded=False):
+with st.expander('Global Surrogate Modelling Benchmarking and Model Selection', expanded=False):
     
-    # --- Model Selection ---
+    # Model Selection
     st.subheader('Cross-Validation Results across Multiple Classifiers')
-    st.write('Random Forest Classifier achieved the strongest cross-validation performance')
+    st.write('Random Forest Classifier achieved the strongest cross-validation accuracy')
     
     param_col1, param_col2, param_col3 = st.columns([1.5, 5, 1.5])
     with param_col2:
@@ -178,11 +178,11 @@ with st.expander('Surrogate Classifier', expanded=False):
         except FileNotFoundError:
             st.error("Could not find 'images/classifier_performance_comparison.png'.")
             
-    st.markdown("---")
+    st.markdown('---')
     
-    # --- Random Forest Best Parameters ---
+    # Random Forest Best Parameters
     st.subheader('Random Forest Best Parameters')
-    st.write('The optimal hyperparameters found during the grid search tuning optimization phase (Randomized Cross-Validation Search):')
+    st.write('The optimal hyperparameters found during the grid search tuning optimisation phase (Randomised Cross-Validation Search):')
     
     met_col1, met_col2, met_col3 = st.columns([1.5, 6, 1.5])
     with met_col2:
@@ -192,9 +192,9 @@ with st.expander('Surrogate Classifier', expanded=False):
         except FileNotFoundError:
             st.error("Could not find 'data/RF_best_params_updated.csv'.")
         
-    st.markdown("---")
+    st.markdown('---')
     
-    # --- Key Metrics Section ---
+    # Key Metrics Section
     st.subheader('Key Metrics')
     st.write('Overall evaluation metrics for the tuned Random Forest classification model:')
     
@@ -206,9 +206,9 @@ with st.expander('Surrogate Classifier', expanded=False):
         except FileNotFoundError:
             st.error("Could not find 'data/tuned_RF_key_metrics_updated.csv'.")
         
-    st.markdown("---")
+    st.markdown('---')
     
-    # --- Classification Report Section ---
+    # Classification Report Section
     st.subheader('Classification Report')
     st.write('Detailed performance metrics breakdown including precision, recall, and f1-score per cluster target:')
     
@@ -216,14 +216,14 @@ with st.expander('Surrogate Classifier', expanded=False):
     with rep_col2:
         try:
             df_rf_report = load_rf_report('data/tuned_RF_classification_report_updated.csv')
-            df_rf_report.columns.values[0] = "Labels"
+            df_rf_report.columns.values[0] = 'Labels'
             st.dataframe(df_rf_report, use_container_width=True, hide_index=True)
         except FileNotFoundError:
             st.error("Could not find 'data/tuned_RF_classification_report_updated.csv'.")
         
-    st.markdown("---")
+    st.markdown('---')
     
-    # --- Confusion Matrix Section (Small Format Plot) ---
+    # Confusion Matrix Section
     st.subheader('Confusion Matrix')
     st.write('Matrix visualising the actual versus predicted classification distributions on test data subsets:')
     
@@ -231,9 +231,9 @@ with st.expander('Surrogate Classifier', expanded=False):
     with cm_col2:
         st.image('images/tuned_RF_confusion_matrix.png', use_container_width=True)
 
-    # --- Random Forest Feature Importances ---
+    # Random Forest Feature Importances
     st.subheader('Random Forest Feature Importances')
-    st.write('Visualization of how much each feature contributes to the predictive power of the Random Forest model using Mean Decrease in Impurity (MDI) / Gini Importance')
+    st.write('Visualisation of how much each feature contributes to the predictive power of the Random Forest model using Mean Decrease in Impurity (MDI) / Gini Importance')
     
     cm_col1, cm_col2, cm_col3 = st.columns([1, 2, 1])
     with cm_col2:
@@ -243,8 +243,8 @@ with st.expander('Surrogate Classifier', expanded=False):
 # Classification Prediction and SHAP Explainability
 # ----------------------------------------------------
 
-# 1. Page Configuration
-st.title("🛍️ Customer Cluster Predictor & SHAP Explainer")
+# Page Configuration
+st.title('🛍️ Customer Cluster Predictor & SHAP Explainer')
 
 LABELS = {
     0: 'RE-ENGAGE',
@@ -253,21 +253,21 @@ LABELS = {
     3: 'RETAIN'
 }
 
-# 2. Cached Data & Pretrained Model Loading
+# Cached Data & Pretrained Model Loading
 @st.cache_data
 def load_datasets():
-    # Reads from the "data" folder in your repository
+    # Reads from the 'data' folder
     X_train = pd.read_csv("data/X_train_updated.csv")
     X_test = pd.read_csv("data/X_test_updated.csv")
     return X_train, X_test
 
 @st.cache_resource
 def load_model_and_explainer(X_train):
-    # Reads your custom pretrained model from the "models" folder
-    loaded_model = joblib.load("models/random_forest_model.pkl")
+    # Reads the custom pretrained model from the 'models' folder
+    loaded_model = joblib.load('models/random_forest_model.pkl')
     rf_clf = loaded_model.named_steps['clf']
     
-    # Initialize explainer using background training data for empirical expected values
+    # Initialise explainer using background training data for empirical expected values
     explainer = shap.TreeExplainer(rf_clf, data=X_train)
     return rf_clf, explainer
 
@@ -276,10 +276,10 @@ try:
     X_train, X_test = load_datasets()
     rf_clf, explainer = load_model_and_explainer(X_train)
 except Exception as e:
-    st.error(f"⚠️ Error loading production files. Check repository paths: {e}")
+    st.error(f'⚠️ Error loading production files. Check repository paths: {e}')
     st.stop()
 
-# --- OPTIMIZED CACHED GLOBAL SHAP ENGINE ---
+# Optimised Cached Global SHAP Engine
 @st.cache_data
 def compute_cached_global_shap(_explainer_engine, _test_df):
     return _explainer_engine(_test_df, check_additivity=False)
@@ -287,25 +287,25 @@ def compute_cached_global_shap(_explainer_engine, _test_df):
 # Pre-calculate full reference matrix for the macro-level view
 global_shap_values = compute_cached_global_shap(explainer, X_test)
 
-# 3. Sidebar Input Elements for Features
-st.sidebar.header("📥 Input Customer Features")
+# Sidebar Input Elements for Features
+st.sidebar.header('📥 Input Customer Features')
 
 monetary_value = st.sidebar.number_input(
-    "Monetary Value ($)", 
+    'Monetary Value ($)', 
     min_value=1.0, 
     max_value=5000.0, 
     value=2600.0, 
     step=10.0
 )
 frequency = st.sidebar.slider(
-    "Frequency (Total Visits)", 
+    'Frequency (Total Visits)', 
     min_value=1, 
     max_value=30, 
     value=10, 
     step=1
 )
 recency = st.sidebar.slider(
-    "Recency (Days Since Last Purchase)", 
+    'Recency (Days Since Last Purchase)', 
     min_value=1, 
     max_value=365, 
     value=10, 
@@ -320,7 +320,7 @@ user_input_df = pd.DataFrame([{
 }])
 user_input_df = user_input_df[X_test.columns].astype(X_test.dtypes)
 
-# 4. Generate SHAP Values Upfront
+# Generate SHAP values upfront
 shap_output = explainer(user_input_df, check_additivity=False)
 
 # Calculate the exact f(x) probability for all 4 classes using SHAP margin outputs
@@ -331,7 +331,7 @@ for class_idx in sorted(LABELS.keys()):
     class_fx_prob = float(class_base_value + class_shap_sum)
     all_classes_probabilities.append(class_fx_prob)
 
-# FIX: Define the prediction dynamically based on the highest probability in the f(x) space
+# Define the prediction dynamically based on the highest probability in the f(x) space
 hard_prediction = int(np.argmax(all_classes_probabilities))
 predicted_label = LABELS[hard_prediction]
 
@@ -340,35 +340,35 @@ base_value = shap_output.base_values[0, hard_prediction]
 
 # Create a clean data presentation frame using the SHAP-derived f(x) probabilities
 prob_df = pd.DataFrame({
-    "Class ID": list(LABELS.keys()),
-    "Cluster Cohort": list(LABELS.values()),
-    "Probability f(x)": all_classes_probabilities
+    'Class ID': list(LABELS.keys()),
+    'Cluster Cohort': list(LABELS.values()),
+    'Probability f(x)': all_classes_probabilities
 })
 
 # Define a custom style function to highlight the active prediction row
 def highlight_predicted_row(row):
-    if row["Class ID"] == hard_prediction:
+    if row['Class ID'] == hard_prediction:
         return ['background-color: #1e4620; color: #a3e635; font-weight: bold;'] * len(row)
     return [''] * len(row)
 
 # Apply formatting styles (Percentage display + conditional row highlight)
 styled_prob_df = (
     prob_df.style
-    .format({"Probability f(x)": "{:.2%}"})
+    .format({'Probability f(x)': '{:.2%}'})
     .apply(highlight_predicted_row, axis=1)
 )
 
-# 5. Display Predictions Dashboard
+# Display predictions dashboard
 col_m1, col_m2 = st.columns(2)
 
 with col_m1:
-    st.subheader("🎯 Primary Assignment")
-    st.write("")  # Visual spacer
-    st.metric(label="Assigned Cluster Cohort", value=predicted_label)
-    st.caption(f"The input values map this customer profile directly to **Cluster {hard_prediction}**.")
+    st.subheader('🎯 Primary Assignment')
+    st.write('')  # Visual spacer
+    st.metric(label='Assigned Cluster Cohort', value=predicted_label)
+    st.caption(f'The input values map this customer profile directly to **Cluster {hard_prediction}**.')
 
 with col_m2:
-    st.subheader("📊 Full Cohort Probability Breakdown")
+    st.subheader('📊 Full Cohort Probability Breakdown')
     # Render the styled probability matrix table directly
     st.dataframe(
         styled_prob_df,
@@ -376,18 +376,18 @@ with col_m2:
         use_container_width=True
     )
 
-st.write("---")
+st.write('---')
 
-# 6. Display Dual SHAP Plots (Waterfall on left, Beeswarm on right)
+# Display dual SHAP plots (Waterfall on left, Beeswarm on right)
 col_plot1, col_plot2 = st.columns(2)
 
 with col_plot1:
-    st.subheader("⏱️ Live Local Explanation (Waterfall Plot)")
-    st.caption(f"Visualizing feature transitions pushing this specific client toward the **{predicted_label}** cluster.")
+    st.subheader('⏱️ Live Local Explanation (Waterfall Plot)')
+    st.caption(f'Visualising feature attributions pushing this specific customer toward the **{predicted_label}** cluster.')
     
     fig_waterfall, ax_waterfall = plt.subplots(figsize=(8, 4.5))
     
-    # Plot the waterfall diagram using correct structural array slicing from shap_output.
+    # Plot the waterfall diagram using correct structural array slicing from shap_output
     shap.plots.waterfall(
         shap.Explanation(
             values=shap_output.values[0, :, hard_prediction],
@@ -397,20 +397,20 @@ with col_plot1:
         ),
         show=False
     )
-    plt.title(f"Local Adjustments for Class {hard_prediction}: {predicted_label}", fontsize=12, pad=10)
+    plt.title(f'Local Adjustments for Class {hard_prediction}: {predicted_label}', fontsize=12, pad=10)
     plt.tight_layout()
     st.pyplot(fig_waterfall, clear_figure=True)
 
 with col_plot2:
-    st.subheader("🌎 Historical Macro View (Global Beeswarm Plot)")
-    st.caption(f"Reviewing baseline feature weight trends for the **{predicted_label}** cohort across the entire test set.")
+    st.subheader('🌎 Historical Macro View (Global Beeswarm Plot)')
+    st.caption(f'Reviewing baseline feature weight trends for the **{predicted_label}** cohort across the entire test set.')
     
     # Extract the pre-calculated 2D slice for the currently active predicted class segment
     class_global_explanation = global_shap_values[:, :, hard_prediction]
     
     fig_beeswarm, ax_beeswarm = plt.subplots(figsize=(8, 4.5))
     shap.plots.beeswarm(class_global_explanation, max_display=3, show=False)
-    plt.title(f"Global Cohort Weight: {predicted_label}", fontsize=12, pad=10)
+    plt.title(f'Global Cohort Weight: {predicted_label}', fontsize=12, pad=10)
     plt.tight_layout()
     st.pyplot(fig_beeswarm, clear_figure=True)
 
@@ -418,58 +418,58 @@ with col_plot2:
 # Cluster Description & Recommended Strategy
 # ----------------------------------------------------
 
-# 7. Dynamic Cluster Description & Strategy Section
-st.write("---")
-st.subheader("📝 Cluster Description & Recommended Strategy")
+# Dynamic Cluster Description & Strategy Section
+st.write('---')
+st.subheader('📝 Cluster Description & Recommended Strategy')
 
 # Define descriptions, strategies, and emojis for each cluster
 CLUSTER_INFO = {
-    "RETAIN": {
-        "emoji": "🔒",
-        "description": "Customers who are moderately active and valuable, but not top-tier. They are steady but could drift away if ignored.",
-        "strategy": "Keep them engaged with loyalty points, personalized recommendations, and consistent communication."
+    'RETAIN': {
+        'emoji': '🔒',
+        'description': 'Customers who are moderately active and valuable, but not top-tier. They are steady but could drift away if ignored.',
+        'strategy': 'Keep them engaged with loyalty points, personalised recommendations, and consistent communication.'
     },
-    "REWARD": {
-        "emoji": "🎁",
-        "description": "Customers who buy frequently, spend a lot, and purchased recently. These are your best customers — loyal and high-value.",
-        "strategy": "Reward them with exclusive offers, VIP programs, or early access."
+    'REWARD': {
+        'emoji': '🎁',
+        'description': 'Customers who buy frequently, spend a lot, and purchased recently. These are your best customers — loyal and high-value.',
+        'strategy': 'Reward them with exclusive offers, VIP programs, or early access.'
     },
-    "NURTURE": {
-        "emoji": "🌱",
-        "description": "New or low-value customers who purchased recently but haven’t yet shown loyalty or high spend. They’re at the beginning of their journey.",
-        "strategy": "Nurture them with onboarding, education, and incentives to build habits."
+    'NURTURE': {
+        'emoji': '🌱',
+        'description': 'New or low-value customers who purchased recently but haven’t yet shown loyalty or high spend. They’re at the beginning of their journey.',
+        'strategy': 'Nurture them with onboarding, education, and incentives to build habits.'
     },
-    "RE-ENGAGE": {
-        "emoji": "🔄",
-        "description": "Customers who haven’t purchased in a long time, spend little, and rarely buy. They are at risk of churn or already inactive.",
-        "strategy": "Win them back with reactivation campaigns, discounts, or reminders."
+    'RE-ENGAGE': {
+        'emoji': '🔄',
+        'description': 'Customers who haven’t purchased in a long time, spend little, and rarely buy. They are at risk of churn or already inactive.',
+        'strategy': 'Win them back with reactivation campaigns, discounts, or reminders.'
     }
 }
 
 # Dynamically display based on prediction
 cluster_info = CLUSTER_INFO.get(predicted_label, {})
-emoji = cluster_info.get("emoji", "")
-st.markdown(f"**Cluster Classification:** {emoji} {predicted_label}")
-st.write(cluster_info.get("description", "No description available."))
+emoji = cluster_info.get('emoji', '')
+st.markdown(f'**Cluster Classification:** {emoji} {predicted_label}')
+st.write(cluster_info.get('description', 'No description available.'))
 st.info(f"💡 Recommended Strategy: {cluster_info.get('strategy', 'No strategy available.')}")
-
 
 # ----------------------------------------------------
 # 7. Feature Sensitivity Analysis (Altair Dynamic Chart)
 # ----------------------------------------------------
+
 import altair as alt
 
-st.write("---")
-st.subheader("🎛️ Feature Sensitivity Analysis")
-st.caption("See how changing a single variable impacts all cluster probabilities using the exact same SHAP engine as the dashboard above.")
+st.write('---')
+st.subheader('🎛️ Feature Sensitivity Analysis')
+st.caption('See how changing a single variable impacts all cluster probabilities using the exact same SHAP engine as the dashboard above.')
 
 # User selects which feature to vary
 target_feature = st.selectbox(
-    "Select a feature to test for sensitivity:",
+    'Select a feature to test for sensitivity:',
     options=list(user_input_df.columns)
 )
 
-# Define logical evaluation ranges based on your sidebar limits
+# Define logical evaluation ranges based on the sidebar limits
 if target_feature == 'MonetaryValue':
     min_val, max_val, step_val = 1.0, 5000.0, 10.0
 elif target_feature == 'Frequency':
@@ -490,10 +490,10 @@ try:
     # Ensure correct feature alignment & data types relative to original test splits
     sensitivity_df = sensitivity_df[X_test.columns].astype(X_test.dtypes)
     
-    # 1. Generate SHAP values for the entire sweep matrix
+    # Generate SHAP values for the entire sweep matrix
     sweep_shap_output = explainer(sensitivity_df, check_additivity=False)
     
-    # 2. Extract and sum the base values and SHAP values for all classes
+    # Extract and sum the base values and SHAP values for all classes
     shap_proba_list = []
     for class_idx in sorted(LABELS.keys()):
         class_base_values = sweep_shap_output.base_values[:, class_idx]
@@ -506,28 +506,28 @@ try:
     # Stack array to shape (num_samples, num_classes)
     shap_proba_matrix = np.column_stack(shap_proba_list)
     
-    # 3. Normalize the raw SHAP outputs so they perfectly sum to 100% (0.0 - 1.0)
+    # Normalise the raw SHAP outputs so they perfectly sum to 100% (0.0 - 1.0)
     row_sums = shap_proba_matrix.sum(axis=1, keepdims=True)
-    normalized_shap_matrix = shap_proba_matrix / row_sums
+    normalised_shap_matrix = shap_proba_matrix / row_sums
     
     # Create a DataFrame to hold the results for plotting
-    plot_df = pd.DataFrame(normalized_shap_matrix, columns=[LABELS[i] for i in sorted(LABELS.keys())])
+    plot_df = pd.DataFrame(normalised_shap_matrix, columns=[LABELS[i] for i in sorted(LABELS.keys())])
     plot_df[target_feature] = feature_range
 
     # Melt data for Altair long-form structure
     melted_df = plot_df.melt(
         id_vars=[target_feature], 
-        var_name="Cohort Cluster", 
-        value_name="Probability"
+        var_name='Cohort Cluster', 
+        value_name='Probability'
     )
 
     # Allocate specific ratio layout: 3 parts chart, 1 part side narrative panel
     col_chart, col_info = st.columns([3, 1])
     
     with col_chart:
-        # A. Base line visualization for cluster probability trajectories
+        # A. Base line visualisation for cluster probability trajectories
         lines = alt.Chart(melted_df).mark_line(strokeWidth=2.5).encode(
-            x=alt.X(f'{target_feature}:Q', title=f"{target_feature} Range"),
+            x=alt.X(f'{target_feature}:Q', title=f'{target_feature} Range'),
             y=alt.Y('Probability:Q', title='Cohort Probability', scale=alt.Scale(domain=[0.0, 1.0])),
             color=alt.Color('Cohort Cluster:N', title='Cohort Cluster')
         )
@@ -548,8 +548,8 @@ try:
         st.altair_chart(lines + rule, use_container_width=True)
         
     with col_info:
-        st.markdown(f"**Current Active Value:**")
-        st.info(f"{target_feature} = {current_val_scalar}")
+        st.markdown(f'**Current Active Value:**')
+        st.info(f'{target_feature} = {current_val_scalar}')
         st.markdown("""
         **How to read this chart:**
         * The **dashed red line** shows where your current sidebar customer profile stands.
@@ -557,8 +557,7 @@ try:
         """)
 
 except Exception as sens_err:
-    st.error(f"Could not calculate sensitivity tracking metrics: {sens_err}")
-
+    st.error(f'Could not calculate sensitivity tracking metrics: {sens_err}')
 
 # ----------------------------------------------------
 # Scatter Plot with Clusters
@@ -566,24 +565,16 @@ except Exception as sens_err:
 
 import matplotlib.patches as mpatches
 
-# --- 1. CORE DATA & METRIC STRUCTURING ---
-#cluster_colors = {0: '#1f77b4', 1: '#d62728', 2: '#2ca02c', 3: '#ff7f0e'}
+# Core data & metrics structuring
 cluster_colors = {0: '#ff7f0e', 1: '#2ca02c', 2: '#d62728', 3: '#1f77b4'}
 
-colors = df_labeled['Cluster'].map(cluster_colors)
-
-#cluster_labels = {
- #   0: "Cluster 0 (RETAIN)",
- #   1: "Cluster 1 (REWARD)",
- #   2: "Cluster 2 (NURTURE)",
- #   3: "Cluster 3 (RE-ENGAGE)"
-#}
+colors = df_labelled['Cluster'].map(cluster_colors)
 
 cluster_labels = {
-    0: "Cluster 0 (RE-ENGAGE)",
-    1: "Cluster 1 (NURTURE)",
-    2: "Cluster 2 (REWARD)",
-    3: "Cluster 3 (RETAIN)"
+    0: 'Cluster 0 (RE-ENGAGE)',
+    1: 'Cluster 1 (NURTURE)',
+    2: 'Cluster 2 (REWARD)',
+    3: 'Cluster 3 (RETAIN)'
 }
 
 # Real-time user slider inputs extracted
@@ -592,23 +583,24 @@ live_y = float(user_input_df['Frequency'].iloc[0])
 live_z = float(user_input_df['Recency'].iloc[0])
 live_border_color = cluster_colors[hard_prediction]
 
-# --- 2. LAYOUT DEFINITION ---
+# Layout definition
 # Splits screen into 2 equal-width columns to hold the visuals side-by-side
 col_left_3d, col_right_hist = st.columns([1, 1])
 
 # =========================================================================
 # LEFT COLUMN: 3D SCATTER PLOT
 # =========================================================================
+
 with col_left_3d:
-    st.subheader("🌐 Customer Space Mapping")
+    st.subheader('🌐 Customer Space Mapping')
     
     fig_3d = plt.figure(figsize=(10, 10))
     ax_3d = fig_3d.add_subplot(projection='3d')
 
     # Background points
-    scatter = ax_3d.scatter(df_labeled['MonetaryValue'],
-                            df_labeled['Frequency'],
-                            df_labeled['Recency'],
+    scatter = ax_3d.scatter(df_labelled['MonetaryValue'],
+                            df_labelled['Frequency'],
+                            df_labelled['Recency'],
                             c=colors, marker='o', alpha=0.6)
 
     # Simulated active user node overlay
@@ -640,7 +632,7 @@ with col_left_3d:
         plt.Line2D([0], [0], marker='*', color='w', markerfacecolor='#facc15', 
                    markeredgecolor=live_border_color, markersize=15, label='★ Simulated Point')
 )
-    ax_3d.legend(handles=legend_handles, loc='upper left', bbox_to_anchor=(0.05, 0.95), title="Customer Clusters")
+    ax_3d.legend(handles=legend_handles, loc='upper left', bbox_to_anchor=(0.05, 0.95), title='Customer Clusters')
 
     # Lock boundaries at 0 origin
     ax_3d.set_xlim(left=0)
@@ -654,45 +646,44 @@ with col_left_3d:
 # =========================================================================
 
 with col_right_hist:
-    st.subheader("📊 Profile Feature Distributions")
+    st.subheader('📊 Profile Feature Distributions')
     
-    # Initialize a multi-axis figure matching the 10x10 scale of the left side
+    # Initialise a multi-axis figure matching the 10x10 scale of the left side
     fig_hist, axes = plt.subplots(3, 1, figsize=(10, 10))
-    plt.subplots_adjust(hspace=0.4) # Add buffer room between rows
+    plt.subplots_adjust(hspace=0.4) # add buffer room between rows
     
     # Base configuration package for clean rendering loops
     features_config = [
-        {"col": "MonetaryValue", "val": live_x, "label": "Monetary Value", "idx": 0},
-        {"col": "Frequency", "val": live_y, "label": "Frequency", "idx": 1},
-        {"col": "Recency", "val": live_z, "label": "Recency", "idx": 2}
+        {'col': 'MonetaryValue', 'val': live_x, 'label': 'Monetary Value', 'idx': 0},
+        {'col': 'Frequency', 'val': live_y, 'label': 'Frequency', 'idx': 1},
+        {'col': 'Recency', 'val': live_z, 'label': 'Recency', 'idx': 2}
     ]
     
     for cfg in features_config:
-        ax = axes[cfg["idx"]]
+        ax = axes[cfg['idx']]
         
-        # --- DYNAMIC BINNING ADJUSTMENT ---
+        # Dynamic binning adjustment
         # If processing Frequency, force exactly 1 bin per individual discrete integer value
-        if cfg["col"] == "Frequency":
-            min_val = int(df_labeled[cfg["col"]].min())
-            max_val = int(df_labeled[cfg["col"]].max())
+        if cfg['col'] == 'Frequency':
+            min_val = int(df_labelled[cfg['col']].min())
+            max_val = int(df_labelled[cfg['col']].max())
             # Creates edges at half-intervals (e.g., 0.5, 1.5, 2.5) to center integer tick labels perfectly
             hist_bins = np.arange(min_val, max_val + 2) - 0.5
         else:
             # Fallback to standard grouping resolution for continuous fields
             hist_bins = 30
-        # ----------------------------------
         
         # Plot distribution matching the current cohort colors using the calculated bins array
-        ax.hist(df_labeled[cfg["col"]], bins=hist_bins, color=live_border_color, alpha=0.6, edgecolor='white')
+        ax.hist(df_labelled[cfg['col']], bins=hist_bins, color=live_border_color, alpha=0.6, edgecolor='white')
         
         # Dynamic threshold marker tracking user coordinates
-        ax.axvline(x=cfg["val"], color='#facc15', linestyle='--', linewidth=3, zorder=5,
+        ax.axvline(x=cfg['val'], color='#facc15', linestyle='--', linewidth=3, zorder=5,
                    label=f"Active Input ({cfg['val']:.1f})")
         
         # Plot styling parameters
         ax.set_title(f"{cfg['label']} Distribution Density", fontsize=12, weight='bold', pad=5)
-        ax.set_xlabel(cfg["label"], fontsize=10)
-        ax.set_ylabel("Customer Count", fontsize=10)
+        ax.set_xlabel(cfg['label'], fontsize=10)
+        ax.set_ylabel('Customer Count', fontsize=10)
         ax.grid(axis='y', linestyle=':', alpha=0.6)
         ax.legend(loc='upper right')
         
@@ -701,36 +692,35 @@ with col_right_hist:
 
     st.pyplot(fig_hist, clear_figure=True)
 
-
 # ----------------------------------------------------
 # 8. REAL-TIME UNIVARIATE OUTLIER DETECTION ENGINE
 # ----------------------------------------------------
 
-st.write("---")
-st.subheader("⚠️ Feature Input Sanity Validation (Z-Score)")
+st.write('---')
+st.subheader('⚠️ Feature Input Sanity Validation (Z-Score)')
 
 # Define standard statistical threshold (3 standard deviations captures 99.7% of normal data)
 Z_THRESHOLD = 3.0
 outlier_messages = []
 
-# Structured package mapping your live inputs to their respective data columns
+# Structured package mapping the live inputs to their respective data columns
 features_to_check = [
-    {"name": "Monetary Value", "col": "MonetaryValue", "current_val": live_x},
-    {"name": "Frequency", "col": "Frequency", "current_val": live_y},
-    {"name": "Recency", "col": "Recency", "current_val": live_z}
+    {'name': 'Monetary Value', 'col': 'MonetaryValue', 'current_val': live_x},
+    {'name': 'Frequency', 'col': 'Frequency', 'current_val': live_y},
+    {'name': 'Recency', 'col': 'Recency', 'current_val': live_z}
 ]
 
 for item in features_to_check:
-    mean_val = df_labeled[item["col"]].mean()
-    std_val = df_labeled[item["col"]].std()
+    mean_val = df_labelled[item['col']].mean()
+    std_val = df_labelled[item['col']].std()
     
     # Safely avoid division-by-zero errors on completely uniform features
     if std_val > 0:
-        z_score = (item["current_val"] - mean_val) / std_val
+        z_score = (item['current_val'] - mean_val) / std_val
         
         # Flag any feature exceeding the threshold limits
         if abs(z_score) > Z_THRESHOLD:
-            direction = "above" if z_score > 0 else "below"
+            direction = 'above' if z_score > 0 else 'below'
             outlier_messages.append(
                 f"• **{item['name']}** input is highly unusual "
                 f"({abs(z_score):.1f} standard deviations {direction} the historical mean)."
@@ -738,16 +728,16 @@ for item in features_to_check:
 
 # Render validation alerts based on the findings
 if outlier_messages:
-    st.error("🚨 **Extreme Feature Input Detected**")
+    st.error('🚨 **Extreme Feature Input Detected**')
     st.markdown(
-        "The current configuration contains parameters that sit outside normal historical baseline boundaries. "
-        "The classification engine may show high variance under these conditions:"
+        'The current configuration contains parameters that sit outside normal historical baseline boundaries. '
+        'The classification engine may show high variance under these conditions:'
     )
     for msg in outlier_messages:
         st.markdown(msg)
 else:
-    st.success("✅ **Inputs within Normal Operational Range**")
+    st.success('✅ **Inputs within Normal Operational Range**')
     st.markdown(
-        "All simulated parameters fall comfortably within expected corporate boundaries. "
-        "Model interpretability plots can be trusted with high statistical confidence."
+        'All simulated parameters fall comfortably within expected corporate boundaries. '
+        'Model interpretability plots can be trusted with high statistical confidence.'
     )
