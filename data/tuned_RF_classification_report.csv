@@ -1,0 +1,5 @@
+,precision,recall,f1-score,support
+RE-ENGAGE,0.99,1.0,0.99,180
+NURTURE,1.0,1.0,1.0,298
+REWARD,1.0,0.99,0.99,100
+RETAIN,0.99,0.99,0.99,184
