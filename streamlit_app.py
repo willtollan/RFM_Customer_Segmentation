@@ -46,8 +46,8 @@ def load_rf_report(file_path):
 
 # Safely Initialise Base Processing Dependencies (Cached)
 try:
-    df_preprocessed = load_preprocessed_data('data/preprocessed_data.csv')
-    df_labelled = load_labelled_data('data/preprocessed_labelled_data.csv')
+    df_preprocessed = load_preprocessed_data('data/preprocessed_data_updated.csv')
+    df_labelled = load_labelled_data('data/preprocessed_labelled_data_updated.csv')
 except FileNotFoundError as e:
     st.error(f"Initialisation mismatch error: {e}. Please check your repository file paths.")
 
@@ -117,10 +117,10 @@ with st.expander('KMeans Clustering Results and Visualisations', expanded=False)
     st.subheader('KMeans Centroids')
     st.write('This table displays the calculated cluster centres (centroids) for each customer segment:')
     try:
-        df_centroids = load_centroids_data('data/customer_centroids.csv')
+        df_centroids = load_centroids_data('data/customer_centroids_updated.csv')
         st.dataframe(df_centroids)
     except FileNotFoundError:
-        st.error("Could not find 'data/customer_centroids.csv'.")
+        st.error("Could not find 'data/customer_centroids_updated.csv'.")
         
     st.markdown("---")
 
@@ -187,10 +187,10 @@ with st.expander('Global Surrogate Classifier', expanded=False):
     met_col1, met_col2, met_col3 = st.columns([1.5, 6, 1.5])
     with met_col2:
         try:
-            df_rf_best_params = load_rf_best_params('data/RF_best_params.csv')
+            df_rf_best_params = load_rf_best_params('data/RF_best_params_updated.csv')
             st.dataframe(df_rf_best_params, use_container_width=True, hide_index=True)
         except FileNotFoundError:
-            st.error("Could not find 'data/RF_best_params.csv'.")
+            st.error("Could not find 'data/RF_best_params_updated.csv'.")
         
     st.markdown("---")
     
@@ -201,10 +201,10 @@ with st.expander('Global Surrogate Classifier', expanded=False):
     met_col1, met_col2, met_col3 = st.columns([1.5, 2, 1.5])
     with met_col2:
         try:
-            df_rf_metrics = load_rf_metrics('data/tuned_RF_key_metrics.csv')
+            df_rf_metrics = load_rf_metrics('data/tuned_RF_key_metrics_updated.csv')
             st.dataframe(df_rf_metrics, use_container_width=True, hide_index=True)
         except FileNotFoundError:
-            st.error("Could not find 'data/tuned_RF_key_metrics.csv'.")
+            st.error("Could not find 'data/tuned_RF_key_metrics_updated.csv'.")
         
     st.markdown("---")
     
@@ -215,11 +215,11 @@ with st.expander('Global Surrogate Classifier', expanded=False):
     rep_col1, rep_col2, rep_col3 = st.columns([1.5, 5, 1.5])
     with rep_col2:
         try:
-            df_rf_report = load_rf_report('data/tuned_RF_classification_report.csv')
+            df_rf_report = load_rf_report('data/tuned_RF_classification_report_updated.csv')
             df_rf_report.columns.values[0] = "Labels"
             st.dataframe(df_rf_report, use_container_width=True, hide_index=True)
         except FileNotFoundError:
-            st.error("Could not find 'data/tuned_RF_classification_report.csv'.")
+            st.error("Could not find 'data/tuned_RF_classification_report_updated.csv'.")
         
     st.markdown("---")
     
@@ -239,7 +239,6 @@ with st.expander('Global Surrogate Classifier', expanded=False):
     with cm_col2:
         st.image('images/RF_feature_importances.png', use_container_width=True)
 
-
 # ----------------------------------------------------
 # Classification Prediction and SHAP Explainability
 # ----------------------------------------------------
@@ -247,13 +246,6 @@ with st.expander('Global Surrogate Classifier', expanded=False):
 # Page Configuration
 #st.set_page_config(page_title="Customer Cluster Explainer", layout="wide")  
 st.title("🛍️ Customer Cluster Predictor & SHAP Explainer")
-
-#LABELS = {
-#    0: 'RETAIN',
-#    1: 'REWARD',
-#    2: 'NURTURE',
-#    3: 'RE-ENGAGE'
-#}
 
 LABELS = {
     0: 'RE-ENGAGE',
@@ -266,14 +258,14 @@ LABELS = {
 @st.cache_data
 def load_datasets():
     # Reads from the "data" folder in the repository
-    X_train = pd.read_csv("data/X_train.csv")
-    X_test = pd.read_csv("data/X_test.csv")
+    X_train = pd.read_csv("data/X_train_updated.csv")
+    X_test = pd.read_csv("data/X_test_updated.csv")
     return X_train, X_test
 
 @st.cache_resource
 def load_model_and_explainer(X_train):
     # Reads the custom pretrained model from the "models" folder
-    loaded_model = joblib.load("models/random_forest_model.pkl")
+    loaded_model = joblib.load("models/random_forest_model_updated.pkl")
     rf_clf = loaded_model.named_steps['clf']
     
     # Initialise explainer using background training data for empirical expected values
