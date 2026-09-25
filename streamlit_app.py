@@ -244,7 +244,7 @@ with st.expander('Surrogate Classifier', expanded=False):
 # ----------------------------------------------------
 
 # 1. Page Configuration
-st.set_page_config(page_title="Customer Cluster Explainer", layout="wide")
+#st.set_page_config(page_title="Customer Cluster Explainer", layout="wide")
 st.title("🛍️ Customer Cluster Predictor & SHAP Explainer")
 
 LABELS = {
