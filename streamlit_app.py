@@ -275,7 +275,7 @@ def load_datasets():
 @st.cache_resource
 def load_model_and_explainer(X_train):
     # Reads your custom pretrained model from the "models" folder
-    loaded_model = joblib.load("models/random_forest_model_updated.pkl")
+    loaded_model = joblib.load("models/random_forest_model.pkl")
     rf_clf = loaded_model.named_steps['clf']
     
     # FIX: Disable additivity verification to prevent internal write/permission exceptions on deployment containers
