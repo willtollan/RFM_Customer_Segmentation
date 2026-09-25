@@ -97,19 +97,19 @@ with st.expander('Data Inspection Workspace', expanded=False):
 
 with st.expander('KMeans Clustering Results and Visualisations', expanded=False):
     
-    # Color-Coded Legend Section
+    # Color-Coded Legend Section (Strictly updated to match your new label_mapping)
     st.subheader('Cluster Reference Legend')
     st.write('Use this color-coded key to identify segments across the visualisations below:')
     
     leg_col1, leg_col2, leg_col3, leg_col4 = st.columns(4)
     with leg_col1:
-        st.markdown('<div style="padding:10px; border-left: 5px solid #1f77b4; background-color: rgba(31, 119, 180, 0.1); border-radius: 4px;"><strong>Cluster 0: Retain</strong><br><span style="color:#1f77b4; font-weight:bold;">🔵 Blue Segment</span></div>', unsafe_allow_html=True)
+        st.markdown('<div style="padding:10px; border-left: 5px solid #ff7f0e; background-color: rgba(255, 127, 14, 0.1); border-radius: 4px;"><strong>Cluster 0: RE-ENGAGE</strong><br><span style="color:#ff7f0e; font-weight:bold;">🟠 Orange Segment</span></div>', unsafe_allow_html=True)
     with leg_col2:
-        st.markdown('<div style="padding:10px; border-left: 5px solid #d62728; background-color: rgba(214, 39, 40, 0.1); border-radius: 4px;"><strong>Cluster 1: Reward</strong><br><span style="color:#d62728; font-weight:bold;">🔴 Red Segment</span></div>', unsafe_allow_html=True)
+        st.markdown('<div style="padding:10px; border-left: 5px solid #2ca02c; background-color: rgba(44, 160, 44, 0.1); border-radius: 4px;"><strong>Cluster 1: NURTURE</strong><br><span style="color:#2ca02c; font-weight:bold;">🟢 Green Segment</span></div>', unsafe_allow_html=True)
     with leg_col3:
-        st.markdown('<div style="padding:10px; border-left: 5px solid #2ca02c; background-color: rgba(44, 160, 44, 0.1); border-radius: 4px;"><strong>Cluster 2: Nurture</strong><br><span style="color:#2ca02c; font-weight:bold;">🟢 Green Segment</span></div>', unsafe_allow_html=True)
+        st.markdown('<div style="padding:10px; border-left: 5px solid #d62728; background-color: rgba(214, 39, 40, 0.1); border-radius: 4px;"><strong>Cluster 2: REWARD</strong><br><span style="color:#d62728; font-weight:bold;">🔴 Red Segment</span></div>', unsafe_allow_html=True)
     with leg_col4:
-        st.markdown('<div style="padding:10px; border-left: 5px solid #ff7f0e; background-color: rgba(255, 127, 14, 0.1); border-radius: 4px;"><strong>Cluster 3: Re-Engage</strong><br><span style="color:#ff7f0e; font-weight:bold;">🟠 Orange Segment</span></div>', unsafe_allow_html=True)
+        st.markdown('<div style="padding:10px; border-left: 5px solid #1f77b4; background-color: rgba(31, 119, 180, 0.1); border-radius: 4px;"><strong>Cluster 3: RETAIN</strong><br><span style="color:#1f77b4; font-weight:bold;">🔵 Blue Segment</span></div>', unsafe_allow_html=True)
                     
     st.markdown("---")
     
@@ -245,14 +245,21 @@ with st.expander('Global Surrogate Classifier', expanded=False):
 # ----------------------------------------------------
 
 # Page Configuration
-st.set_page_config(page_title="Customer Cluster Explainer", layout="wide")
+#st.set_page_config(page_title="Customer Cluster Explainer", layout="wide")  
 st.title("🛍️ Customer Cluster Predictor & SHAP Explainer")
 
+#LABELS = {
+#    0: 'RETAIN',
+#    1: 'REWARD',
+#    2: 'NURTURE',
+#    3: 'RE-ENGAGE'
+#}
+
 LABELS = {
-    0: 'RETAIN',
-    1: 'REWARD',
-    2: 'NURTURE',
-    3: 'RE-ENGAGE'
+    0: 'RE-ENGAGE',
+    1: 'NURTURE',
+    2: 'REWARD',
+    3: 'RETAIN'
 }
 
 # Cached Data & Pretrained Model Loading
@@ -455,7 +462,6 @@ st.markdown(f"**Cluster Classification:** {emoji} {predicted_label}")
 st.write(cluster_info.get("description", "No description available."))
 st.info(f"💡 Recommended Strategy: {cluster_info.get('strategy', 'No strategy available.')}")
 
-
 # ----------------------------------------------------
 # 7. Feature Sensitivity Analysis (Altair Dynamic Chart)
 # ----------------------------------------------------
@@ -476,9 +482,11 @@ target_feature = st.selectbox(
 if target_feature == 'MonetaryValue':
     min_val, max_val, step_val = 0.0, 50000.0, 500.0
 elif target_feature == 'Frequency':
-    min_val, max_val, step_val = 1.0, 100.0, 1.0
+    #min_val, max_val, step_val = 1.0, 100.0, 1.0
+    min_val, max_val, step_val = 1.0, 20.0, 1.0
 else:  # Recency
-    min_val, max_val, step_val = 0.0, 365.0, 5.0
+    #min_val, max_val, step_val = 0.0, 365.0, 5.0
+    min_val, max_val, step_val = 0.0, 400.0, 5.0
 
 # Generate a synthetic range of values for the selected feature
 feature_range = np.arange(min_val, max_val + step_val, step_val)
@@ -562,7 +570,6 @@ try:
 except Exception as sens_err:
     st.error(f"Could not calculate sensitivity tracking metrics: {sens_err}")
 
-
 # ----------------------------------------------------
 # Scatter Plot with Clusters
 # ----------------------------------------------------
@@ -570,14 +577,22 @@ except Exception as sens_err:
 import matplotlib.patches as mpatches
 
 # Core Data & Metric Structuring
-cluster_colors = {0: '#1f77b4', 1: '#d62728', 2: '#2ca02c', 3: '#ff7f0e'}
+#cluster_colors = {0: '#1f77b4', 1: '#d62728', 2: '#2ca02c', 3: '#ff7f0e'}
+cluster_colors = {0: '#ff7f0e', 1: '#2ca02c', 2: '#d62728', 3: '#1f77b4'}
 colors = df_labelled['Cluster'].map(cluster_colors)
 
+#cluster_labels = {
+#    0: "Cluster 0 (RETAIN)",
+#    1: "Cluster 1 (REWARD)",
+#    2: "Cluster 2 (NURTURE)",
+#    3: "Cluster 3 (RE-ENGAGE)"
+#}
+
 cluster_labels = {
-    0: "Cluster 0 (RETAIN)",
-    1: "Cluster 1 (REWARD)",
-    2: "Cluster 2 (NURTURE)",
-    3: "Cluster 3 (RE-ENGAGE)"
+    0: "Cluster 0 (RE-ENGAGE)",
+    1: "Cluster 1 (NURTURE)",
+    2: "Cluster 2 (REWARD)",
+    3: "Cluster 3 (RETAIN)"
 }
 
 # Real-time user slider inputs extracted
@@ -691,7 +706,6 @@ with col_right_hist:
         ax.set_xlim(left=0)
 
     st.pyplot(fig_hist, clear_figure=True)
-
 
 # ----------------------------------------------------
 # 8. REAL-TIME UNIVARIATE OUTLIER DETECTION ENGINE
