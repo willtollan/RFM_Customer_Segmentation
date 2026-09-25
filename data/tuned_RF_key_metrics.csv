@@ -1,0 +1,4 @@
+Metric,Value
+Accuracy,0.9961
+Macro F1,0.9953
+Balanced Accuracy,0.9948
