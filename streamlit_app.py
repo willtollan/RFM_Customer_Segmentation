@@ -244,15 +244,7 @@ with st.expander('Surrogate Classifier', expanded=False):
 # ----------------------------------------------------
 
 # 1. Page Configuration
-#st.set_page_config(page_title="Customer Cluster Explainer", layout="wide")
 st.title("🛍️ Customer Cluster Predictor & SHAP Explainer")
-
-#LABELS = {
-#    0: 'RETAIN',
-#    1: 'REWARD',
-#    2: 'NURTURE',
-#    3: 'RE-ENGAGE'
-#}
 
 LABELS = {
     0: 'RE-ENGAGE',
@@ -268,16 +260,6 @@ def load_datasets():
     X_train = pd.read_csv("data/X_train_updated.csv")
     X_test = pd.read_csv("data/X_test_updated.csv")
     return X_train, X_test
-
-#@st.cache_resource
-#def load_model_and_explainer(X_train):
-#    # Reads your custom pretrained model from the "models" folder
-#    loaded_model = joblib.load("models/random_forest_model.pkl")
-#    rf_clf = loaded_model.named_steps['clf']
-    
-#    # Initialize explainer using background training data for empirical expected values
-#    explainer = shap.TreeExplainer(rf_clf, data=X_train)
-#    return rf_clf, explainer
 
 @st.cache_resource
 def load_model_and_explainer(X_train):
@@ -297,19 +279,6 @@ except Exception as e:
     st.error(f"⚠️ Error loading production files. Check repository paths: {e}")
     st.stop()
 
-# Load production components
-#try:
-#    X_train, X_test = load_datasets()
-#    rf_clf, explainer = load_model_and_explainer(X_train)
-#except Exception as e:
-#    # ENHANCED DIAGNOSTIC: This prints the exact error class name and the full message
-#    st.error(f"⚠️ Error loading production files. Type: {type(e).__name__} | Message: {e}")
-#    
-#    # This will print the complete stack trace right on your dashboard screen so we can see the exact line
-#    import traceback
-#    st.code(traceback.format_exc())
-#    st.stop()
-
 # --- OPTIMIZED CACHED GLOBAL SHAP ENGINE ---
 @st.cache_data
 def compute_cached_global_shap(_explainer_engine, _test_df):
@@ -323,23 +292,23 @@ st.sidebar.header("📥 Input Customer Features")
 
 monetary_value = st.sidebar.number_input(
     "Monetary Value ($)", 
-    min_value=0.0, 
-    max_value=50000.0, 
-    value=150.0, 
+    min_value=1.0, 
+    max_value=5000.0, 
+    value=2600.0, 
     step=10.0
 )
 frequency = st.sidebar.slider(
     "Frequency (Total Visits)", 
     min_value=1, 
-    max_value=15, 
-    value=1, 
+    max_value=30, 
+    value=10, 
     step=1
 )
 recency = st.sidebar.slider(
     "Recency (Days Since Last Purchase)", 
-    min_value=0, 
-    max_value=400, 
-    value=110, 
+    min_value=1, 
+    max_value=365, 
+    value=10, 
     step=1
 )
 
@@ -502,11 +471,11 @@ target_feature = st.selectbox(
 
 # Define logical evaluation ranges based on your sidebar limits
 if target_feature == 'MonetaryValue':
-    min_val, max_val, step_val = 0.0, 50000.0, 500.0
+    min_val, max_val, step_val = 1.0, 5000.0, 10.0
 elif target_feature == 'Frequency':
-    min_val, max_val, step_val = 1.0, 100.0, 1.0
+    min_val, max_val, step_val = 1.0, 30.0, 1.0
 else:  # Recency
-    min_val, max_val, step_val = 0.0, 365.0, 5.0
+    min_val, max_val, step_val = 1.0, 365.0, 1.0
 
 # Generate a synthetic range of values for the selected feature
 feature_range = np.arange(min_val, max_val + step_val, step_val)
