@@ -268,7 +268,7 @@ def load_datasets():
     return X_train, X_test
 
 @st.cache_resource
-def load_model_and_explainer(X_train):
+def load_model_and_explainer():
     # Dynamically resolve model path to prevent System Error 13 permission blocks
     base_dir = os.path.dirname(os.path.abspath(__file__))
     model_path = os.path.join(base_dir, "models", "random_forest_model_updated.pkl")
@@ -279,14 +279,15 @@ def load_model_and_explainer(X_train):
     
     rf_clf = loaded_model.named_steps['clf']
 
-    # Initialise explainer using background training data for empirical expected values
-    explainer = shap.TreeExplainer(rf_clf, data=X_train)
+    # Removing data=X_train switches SHAP to exact path-dependent mode in memory.
+    # This prevents the background engine from compiling files on disk, permanently fixing Error 13.
+    explainer = shap.TreeExplainer(rf_clf)
     return rf_clf, explainer
 
 # Load production components cleanly
 try:
     X_train, X_test = load_datasets()
-    rf_clf, explainer = load_model_and_explainer(X_train)
+    rf_clf, explainer = load_model_and_explainer()
 except Exception as e:
     st.error(f"Error loading production files. Check repository paths: {e}")
     st.stop()
