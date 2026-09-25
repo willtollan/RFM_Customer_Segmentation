@@ -284,11 +284,24 @@ def load_model_and_explainer(X_train):
 
 
 # Load production components
+#try:
+#    X_train, X_test = load_datasets()
+#    rf_clf, explainer = load_model_and_explainer(X_train)
+#except Exception as e:
+#    st.error(f"⚠️ Error loading production files. Check repository paths: {e}")
+#    st.stop()
+
+# Load production components
 try:
     X_train, X_test = load_datasets()
     rf_clf, explainer = load_model_and_explainer(X_train)
 except Exception as e:
-    st.error(f"⚠️ Error loading production files. Check repository paths: {e}")
+    # ENHANCED DIAGNOSTIC: This prints the exact error class name and the full message
+    st.error(f"⚠️ Error loading production files. Type: {type(e).__name__} | Message: {e}")
+    
+    # This will print the complete stack trace right on your dashboard screen so we can see the exact line
+    import traceback
+    st.code(traceback.format_exc())
     st.stop()
 
 # --- OPTIMIZED CACHED GLOBAL SHAP ENGINE ---
