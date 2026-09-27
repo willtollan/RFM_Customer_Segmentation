@@ -240,7 +240,7 @@ with st.expander('Global Surrogate Modelling Benchmarking and Model Selection', 
         st.image('images/RF_feature_importances.png', use_container_width=True)
 
 # ----------------------------------------------------
-# Classification Prediction and SHAP Explainability
+# 5. Classification Prediction and SHAP Explainability
 # ----------------------------------------------------
 
 # Page configuration
@@ -415,7 +415,7 @@ with col_plot2:
     st.pyplot(fig_beeswarm, clear_figure=True)
 
 # ----------------------------------------------------
-# Cluster Description & Recommended Strategy
+# 6. Cluster Description & Recommended Strategy
 # ----------------------------------------------------
 
 # Dynamic cluster description & strategy section
@@ -560,7 +560,7 @@ except Exception as sens_err:
     st.error(f'Could not calculate sensitivity tracking metrics: {sens_err}')
 
 # ----------------------------------------------------
-# Scatter Plot with Clusters
+# 8. Scatter Plot with Clusters
 # ----------------------------------------------------
 
 import matplotlib.patches as mpatches
@@ -588,7 +588,7 @@ live_border_color = cluster_colors[hard_prediction]
 col_left_3d, col_right_hist = st.columns([1, 1])
 
 # =========================================================================
-# LEFT COLUMN: 3D SCATTER PLOT
+# 8a. LEFT COLUMN: 3D SCATTER PLOT
 # =========================================================================
 
 with col_left_3d:
@@ -642,7 +642,7 @@ with col_left_3d:
     st.pyplot(fig_3d, clear_figure=True)
 
 # =========================================================================
-# RIGHT COLUMN: STACKED FEATURE HISTOGRAMS WITH LIVE USER POINTERS
+# 8b. RIGHT COLUMN: STACKED FEATURE HISTOGRAMS WITH LIVE USER POINTERS
 # =========================================================================
 
 with col_right_hist:
@@ -693,7 +693,7 @@ with col_right_hist:
     st.pyplot(fig_hist, clear_figure=True)
 
 # ----------------------------------------------------
-# 8. REAL-TIME UNIVARIATE OUTLIER DETECTION ENGINE
+# 9. REAL-TIME UNIVARIATE OUTLIER DETECTION ENGINE
 # ----------------------------------------------------
 
 st.write('---')
