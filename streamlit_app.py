@@ -8,8 +8,8 @@ import numpy as np
 # Configure layout to fit wide data tables comfortably
 st.set_page_config(page_title='Machine Learning App', layout='wide')
 
-st.title('🤖 Machine Learning App')
-st.info('This app processes transaction data, analyses customer cohorts, and deploys a live customer classification engine.')
+st.title('Explainable RFM Customer Segmentation')
+st.info('This app deploys a live customer classification engine with SHAP explanations.')
 
 # ----------------------------------------------------
 # 1. CACHED DATA & ARTIFACT LOADING FUNCTIONS
@@ -87,7 +87,7 @@ with st.expander('Data Inspection Workspace', expanded=False):
         st.metric(label='Total Unique Labelled Customers', value=len(df_labelled))
         
         # Train/Test split note
-        st.info('💡 **Modelling Note:** Prior to training, an **80% training and 20% testing split** was performed on this dataset. The split used **random shuffling** to remove structural order bias and **stratification** to strictly preserve original class balances across subsets.')
+        st.info('**Modelling Note:** Prior to training, an **80% training and 20% testing split** was performed on this dataset. The split used **random shuffling** to remove structural order bias and **stratification** to strictly preserve original class balances across subsets.')
     except NameError:
         st.error('Labelled dataframe not initialised.')
 
@@ -244,7 +244,7 @@ with st.expander('Global Surrogate Modelling Benchmarking and Model Selection', 
 # ----------------------------------------------------
 
 # Page configuration
-st.title('🛍️ Customer Cluster Predictor & SHAP Explainer')
+st.title('Customer Cluster Predictor & SHAP Explainer')
 
 LABELS = {
     0: 'RE-ENGAGE',
@@ -276,7 +276,7 @@ try:
     X_train, X_test = load_datasets()
     rf_clf, explainer = load_model_and_explainer(X_train)
 except Exception as e:
-    st.error(f'⚠️ Error loading production files. Check repository paths: {e}')
+    st.error(f'Error loading production files. Check repository paths: {e}')
     st.stop()
 
 # Optimised cached global SHAP engine
@@ -288,7 +288,7 @@ def compute_cached_global_shap(_explainer_engine, _test_df):
 global_shap_values = compute_cached_global_shap(explainer, X_test)
 
 # Sidebar input elements for features
-st.sidebar.header('📥 Input Customer Features')
+st.sidebar.header('Input Customer Features')
 
 monetary_value = st.sidebar.number_input(
     'Monetary Value ($)', 
@@ -362,13 +362,13 @@ styled_prob_df = (
 col_m1, col_m2 = st.columns(2)
 
 with col_m1:
-    st.subheader('🎯 Primary Assignment')
+    st.subheader('Primary Assignment')
     st.write('')  # Visual spacer
     st.metric(label='Assigned Cluster Cohort', value=predicted_label)
     st.caption(f'The input values map this customer profile directly to **Cluster {hard_prediction}**.')
 
 with col_m2:
-    st.subheader('📊 Full Cohort Probability Breakdown')
+    st.subheader('Full Cohort Probability Breakdown')
     # Render the styled probability matrix table directly
     st.dataframe(
         styled_prob_df,
@@ -382,7 +382,7 @@ st.write('---')
 col_plot1, col_plot2 = st.columns(2)
 
 with col_plot1:
-    st.subheader('⏱️ Live Local Explanation (Waterfall Plot)')
+    st.subheader('Live Local Explanation (Waterfall Plot)')
     st.caption(f'Visualising feature attributions pushing this specific customer toward the **{predicted_label}** cluster.')
     
     fig_waterfall, ax_waterfall = plt.subplots(figsize=(8, 4.5))
@@ -402,7 +402,7 @@ with col_plot1:
     st.pyplot(fig_waterfall, clear_figure=True)
 
 with col_plot2:
-    st.subheader('🌎 Historical Macro View (Global Beeswarm Plot)')
+    st.subheader('Historical Macro View (Global Beeswarm Plot)')
     st.caption(f'Reviewing baseline feature weight trends for the **{predicted_label}** cohort across the entire test set.')
     
     # Extract the pre-calculated 2D slice for the currently active predicted class segment
@@ -420,27 +420,23 @@ with col_plot2:
 
 # Dynamic cluster description & strategy section
 st.write('---')
-st.subheader('📝 Cluster Description & Recommended Strategy')
+st.subheader('Cluster Description & Recommended Strategy')
 
 # Define descriptions, strategies, and emojis for each cluster
 CLUSTER_INFO = {
     'RETAIN': {
-        'emoji': '🔒',
         'description': 'Customers who are moderately active and valuable, but not top-tier. They are steady but could drift away if ignored.',
         'strategy': 'Keep them engaged with loyalty points, personalised recommendations, and consistent communication.'
     },
     'REWARD': {
-        'emoji': '🎁',
         'description': 'Customers who buy frequently, spend a lot, and purchased recently. These are your best customers — loyal and high-value.',
         'strategy': 'Reward them with exclusive offers, VIP programs, or early access.'
     },
     'NURTURE': {
-        'emoji': '🌱',
         'description': 'New or low-value customers who purchased recently but haven’t yet shown loyalty or high spend. They’re at the beginning of their journey.',
         'strategy': 'Nurture them with onboarding, education, and incentives to build habits.'
     },
     'RE-ENGAGE': {
-        'emoji': '🔄',
         'description': 'Customers who haven’t purchased in a long time, spend little, and rarely buy. They are at risk of churn or already inactive.',
         'strategy': 'Win them back with reactivation campaigns, discounts, or reminders.'
     }
@@ -448,10 +444,9 @@ CLUSTER_INFO = {
 
 # Dynamically display based on prediction
 cluster_info = CLUSTER_INFO.get(predicted_label, {})
-emoji = cluster_info.get('emoji', '')
-st.markdown(f'**Cluster Classification:** {emoji} {predicted_label}')
+st.markdown(f'**Cluster Classification:** {predicted_label}')
 st.write(cluster_info.get('description', 'No description available.'))
-st.info(f"💡 Recommended Strategy: {cluster_info.get('strategy', 'No strategy available.')}")
+st.info(f"Recommended Strategy: {cluster_info.get('strategy', 'No strategy available.')}")
 
 # ----------------------------------------------------
 # 7. Feature Sensitivity Analysis (Altair Dynamic Chart)
@@ -460,7 +455,7 @@ st.info(f"💡 Recommended Strategy: {cluster_info.get('strategy', 'No strategy 
 import altair as alt
 
 st.write('---')
-st.subheader('🎛️ Feature Sensitivity Analysis')
+st.subheader('Feature Sensitivity Analysis')
 st.caption('See how changing a single variable impacts all cluster probabilities using the exact same SHAP engine as the dashboard above.')
 
 # User selects which feature to vary
@@ -592,7 +587,7 @@ col_left_3d, col_right_hist = st.columns([1, 1])
 # =========================================================================
 
 with col_left_3d:
-    st.subheader('🌐 Customer Space Mapping')
+    st.subheader('Customer Space Mapping')
     
     fig_3d = plt.figure(figsize=(10, 10))
     ax_3d = fig_3d.add_subplot(projection='3d')
@@ -646,7 +641,7 @@ with col_left_3d:
 # =========================================================================
 
 with col_right_hist:
-    st.subheader('📊 Profile Feature Distributions')
+    st.subheader('Profile Feature Distributions')
     
     # Initialise a multi-axis figure matching the 10x10 scale of the left side
     fig_hist, axes = plt.subplots(3, 1, figsize=(10, 10))
@@ -697,7 +692,7 @@ with col_right_hist:
 # ----------------------------------------------------
 
 st.write('---')
-st.subheader('⚠️ Feature Input Sanity Validation (Z-Score)')
+st.subheader('Feature Input Sanity Validation (Z-Score)')
 
 # Define standard statistical threshold (3 standard deviations captures 99.7% of normal data)
 Z_THRESHOLD = 3.0
@@ -728,7 +723,7 @@ for item in features_to_check:
 
 # Render validation alerts based on the findings
 if outlier_messages:
-    st.error('🚨 **Extreme Feature Input Detected**')
+    st.error('**Extreme Feature Input Detected**')
     st.markdown(
         'The current configuration contains parameters that sit outside normal historical baseline boundaries. '
         'The classification engine may show high variance under these conditions:'
@@ -736,7 +731,7 @@ if outlier_messages:
     for msg in outlier_messages:
         st.markdown(msg)
 else:
-    st.success('✅ **Inputs within Normal Operational Range**')
+    st.success('**Inputs within Normal Operational Range**')
     st.markdown(
         'All simulated parameters fall comfortably within expected corporate boundaries. '
         'Model interpretability plots can be trusted with high statistical confidence.'
